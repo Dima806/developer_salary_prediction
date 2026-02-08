@@ -23,7 +23,7 @@ with st.sidebar:
     st.header("About")
     st.write(
         """
-        This app uses a Linear Regression model trained on Stack Overflow
+        This app uses an XGBoost (gradient boosting) model trained on Stack Overflow
         Developer Survey data to predict annual salaries based on:
         - Country
         - Years of professional coding experience
@@ -107,5 +107,5 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
 # Footer
 st.divider()
 st.caption(
-    "Built with Streamlit • Data from Stack Overflow Developer Survey • Model: Linear Regression"
+    "Built with Streamlit • Data from Stack Overflow Developer Survey • Model: XGBoost"
 )

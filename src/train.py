@@ -4,7 +4,8 @@ import pickle
 from pathlib import Path
 
 import pandas as pd
-from sklearn.linear_model import LinearRegression
+import numpy as np
+from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 
 
@@ -22,23 +23,36 @@ def main():
     # Load only required columns to save memory
     df = pd.read_csv(
         data_path,
-        usecols=["Country", "YearsCodePro", "EdLevel", "ConvertedCompYearly"],
+        usecols=["Country", "YearsCode", "EdLevel", "ConvertedCompYearly"],
     )
 
     print(f"Loaded {len(df):,} rows")
 
+    print("Removing null, extremely small and large reported salaries")
+    # select main label
+    main_label = "ConvertedCompYearly"
+    # Convert compensations into kUSD/year
+    df[main_label] = df[main_label]*1e-3
+    # select records with main label more than 1kUSD/year
+    df = df[df[main_label]>1.0]
+    # further exclude 2% of smallest and 2% of highest salaries
+    P = np.percentile(df[main_label], [2, 98])
+    df = df[(df[main_label] > P[0]) & (df[main_label] < P[1])]
+
+    print(df.shape)
+
     # Drop rows with missing target
-    df = df.dropna(subset=["ConvertedCompYearly"])
+    df = df.dropna(subset=[main_label])
     print(f"After removing missing targets: {len(df):,} rows")
 
     # Fill missing values in features
-    df["YearsCodePro"] = df["YearsCodePro"].fillna(0)
+    df["YearsCode"] = df["YearsCode"].fillna(0)
     df["Country"] = df["Country"].fillna("Unknown")
     df["EdLevel"] = df["EdLevel"].fillna("Unknown")
 
     # Create feature matrix with one-hot encoding for categoricals
-    X = pd.get_dummies(df[["Country", "YearsCodePro", "EdLevel"]], drop_first=True)
-    y = df["ConvertedCompYearly"]
+    X = pd.get_dummies(df[["Country", "YearsCode", "EdLevel"]], drop_first=True)
+    y = df[main_label]
 
     print(f"Feature matrix shape: {X.shape}")
 
@@ -48,15 +62,30 @@ def main():
     )
 
     # Train model
-    print("Training model...")
-    model = LinearRegression()
-    model.fit(X_train, y_train)
+    print("Training XGBoost model...")
+    model = XGBRegressor(
+        n_estimators=5000,
+        learning_rate=0.01,
+        max_depth=6,
+        min_child_weight=10,
+        random_state=42,
+        n_jobs=-1,
+        early_stopping_rounds=50,
+    )
+    model.fit(
+        X_train,
+        y_train,
+        eval_set=[(X_test, y_test)],
+        verbose=False,
+    )
+
+    print(f"Best iteration: {model.best_iteration + 1} (early stopping at {model.n_estimators} max)")
 
     # Evaluate
     train_score = model.score(X_train, y_train)
     test_score = model.score(X_test, y_test)
-    print(f"Training R² score: {train_score:.4f}")
-    print(f"Test R² score: {test_score:.4f}")
+    print(f"Training R2 score: {train_score:.4f}")
+    print(f"Test R2 score: {test_score:.4f}")
 
     # Save model and feature columns for inference
     model_path = Path("src/model.pkl")

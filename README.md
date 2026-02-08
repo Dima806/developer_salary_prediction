@@ -4,7 +4,7 @@ A minimal, local-first ML application that predicts developer salaries using Sta
 
 ## Features
 
-- 🎯 Simple Linear Regression model for salary prediction
+- 🎯 XGBoost (gradient boosting) model for salary prediction
 - ✅ Input validation with Pydantic
 - 🌐 Interactive web UI with Streamlit
 - 📊 Trained on Stack Overflow Developer Survey data
@@ -35,18 +35,18 @@ Download the Stack Overflow Developer Survey CSV file:
 ### 3. Train the Model
 
 ```bash
-python src/train.py
+uv run python src/train.py
 ```
 
 This will:
 - Load and preprocess the survey data
-- Train a Linear Regression model
+- Train an XGBoost model
 - Save the model to `src/model.pkl`
 
 ### 4. Run the Streamlit App
 
 ```bash
-streamlit run app.py
+uv run streamlit run app.py
 ```
 
 The app will open in your browser at `http://localhost:8501`
@@ -102,7 +102,8 @@ print(f"Estimated salary: ${salary:,.0f}")
 - **Python 3.12+**
 - **uv** - Package manager
 - **pandas** - Data manipulation
-- **scikit-learn** - Machine learning
+- **xgboost** - Gradient boosting model
+- **scikit-learn** - ML utilities (train/test split)
 - **pydantic** - Data validation
 - **streamlit** - Web UI
 

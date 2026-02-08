@@ -207,9 +207,9 @@ marimo/_lsp/
 __marimo__/
 
 # Project-specific
-## Data files (too large for git)
-# data/*.csv
-# data/*.zip
+# Data files (too large for git)
+data/*.csv
+data/*.zip
 
 # Trained model artifacts
 src/model.pkl
