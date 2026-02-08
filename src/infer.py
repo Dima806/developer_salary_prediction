@@ -6,9 +6,10 @@ from pathlib import Path
 import pandas as pd
 
 from src.schema import SalaryInput
+from src.preprocessing import prepare_features
 
 # Load model and artifacts at module level
-model_path = Path("src/model.pkl")
+model_path = Path("models/model.pkl")
 
 if not model_path.exists():
     raise FileNotFoundError(
@@ -39,17 +40,12 @@ def predict_salary(data: SalaryInput) -> float:
         }
     )
 
-    # Apply one-hot encoding
-    input_encoded = pd.get_dummies(input_df, drop_first=True)
+    # Apply the same preprocessing as training
+    input_encoded = prepare_features(input_df)
 
-    # Ensure all feature columns from training are present
-    # Add missing columns with 0s
-    for col in feature_columns:
-        if col not in input_encoded.columns:
-            input_encoded[col] = 0
-
-    # Reorder columns to match training
-    input_encoded = input_encoded[feature_columns]
+    # Ensure all feature columns from training are present and in correct order
+    # Use reindex to add missing columns with 0s and reorder in one operation
+    input_encoded = input_encoded.reindex(columns=feature_columns, fill_value=0)
 
     # Make prediction
     prediction = model.predict(input_encoded)[0]

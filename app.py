@@ -92,7 +92,7 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
             help="Predicted annual compensation in USD",
         )
 
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         st.error(
             """
             ❌ Model not found! Please train the model first by running:

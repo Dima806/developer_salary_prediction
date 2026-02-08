@@ -17,12 +17,14 @@ This is a minimal, local-first ML application built in Python that predicts deve
 .
 ├── data/
 │   └── survey_results_public.csv    # Stack Overflow survey data
+├── models/
+│   └── model.pkl                    # Serialized trained model
 ├── src/
 │   ├── schema.py                    # Pydantic validation models
 │   ├── train.py                     # Model training script
-│   ├── infer.py                     # Inference utilities
-│   └── model.pkl                    # Serialized trained model
+│   └── infer.py                     # Inference utilities
 ├── app.py                           # Streamlit web application
+├── example_inference.py             # Example inference script
 ├── pyproject.toml                   # Project dependencies (uv)
 ├── uv.lock                          # Locked dependencies
 └── README.md                        # Project documentation
@@ -57,7 +59,7 @@ This will:
 - Load data from `data/survey_results_public.csv`
 - Clean and preprocess features
 - Train the regression model
-- Save model to `src/model.pkl`
+- Save model to `models/model.pkl`
 
 ### Running the Streamlit App
 ```bash
@@ -179,7 +181,7 @@ uv pip list
 uv run python src/train.py
 
 # Clean generated files
-rm -f src/model.pkl
+rm -f models/model.pkl
 
 # Check data file size
 du -h data/survey_results_public.csv
@@ -189,7 +191,7 @@ du -h data/survey_results_public.csv
 
 ### Model file not found
 - Run training first: `python src/train.py`
-- Check file exists: `ls -la src/model.pkl`
+- Check file exists: `ls -la models/model.pkl`
 
 ### Missing dependencies
 - Sync environment: `uv sync`

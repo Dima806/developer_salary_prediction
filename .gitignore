@@ -212,8 +212,8 @@ data/*.csv
 data/*.zip
 
 # Trained model artifacts
-src/model.pkl
-*.pkl
+models/*.pkl
+models/*.joblib
 
 # LLM
 .llm/

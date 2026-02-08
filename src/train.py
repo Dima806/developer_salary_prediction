@@ -8,6 +8,8 @@ import numpy as np
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 
+from preprocessing import prepare_features
+
 
 def main():
     """Train and save the salary prediction model."""
@@ -31,10 +33,8 @@ def main():
     print("Removing null, extremely small and large reported salaries")
     # select main label
     main_label = "ConvertedCompYearly"
-    # Convert compensations into kUSD/year
-    df[main_label] = df[main_label]*1e-3
-    # select records with main label more than 1kUSD/year
-    df = df[df[main_label]>1.0]
+    # select records with main label more than 1000 USD/year
+    df = df[df[main_label] > 1000]
     # further exclude 2% of smallest and 2% of highest salaries
     P = np.percentile(df[main_label], [2, 98])
     df = df[(df[main_label] > P[0]) & (df[main_label] < P[1])]
@@ -45,16 +45,70 @@ def main():
     df = df.dropna(subset=[main_label])
     print(f"After removing missing targets: {len(df):,} rows")
 
-    # Fill missing values in features
-    df["YearsCode"] = df["YearsCode"].fillna(0)
-    df["Country"] = df["Country"].fillna("Unknown")
-    df["EdLevel"] = df["EdLevel"].fillna("Unknown")
-
-    # Create feature matrix with one-hot encoding for categoricals
-    X = pd.get_dummies(df[["Country", "YearsCode", "EdLevel"]], drop_first=True)
+    # Apply consistent feature transformations (same as used in inference)
+    X = prepare_features(df)
     y = df[main_label]
 
-    print(f"Feature matrix shape: {X.shape}")
+    print(f"\nFeature matrix shape: {X.shape}")
+    print(f"Total features: {X.shape[1]}")
+
+    # Display feature information for debugging and inference comparison
+    print("\n" + "=" * 60)
+    print("FEATURE ANALYSIS (for comparing with inference)")
+    print("=" * 60)
+
+    # Show top countries in the dataset
+    print("\n📍 Top 10 Countries:")
+    top_countries = df["Country"].value_counts().head(10)
+    for country, count in top_countries.items():
+        print(f"  - {country}: {count:,} ({count/len(df)*100:.1f}%)")
+
+    # Show top education levels
+    print("\n🎓 Top Education Levels:")
+    top_edu = df["EdLevel"].value_counts().head(10)
+    for edu, count in top_edu.items():
+        print(f"  - {edu}: {count:,} ({count/len(df)*100:.1f}%)")
+
+    # Show YearsCode statistics
+    print("\n💼 Years of Coding Experience:")
+    print(f"  - Min: {df['YearsCode'].min():.1f}")
+    print(f"  - Max: {df['YearsCode'].max():.1f}")
+    print(f"  - Mean: {df['YearsCode'].mean():.1f}")
+    print(f"  - Median: {df['YearsCode'].median():.1f}")
+    print(f"  - 25th percentile: {df['YearsCode'].quantile(0.25):.1f}")
+    print(f"  - 75th percentile: {df['YearsCode'].quantile(0.75):.1f}")
+
+    # Show most common one-hot encoded features (by frequency)
+    # Separate analysis for each categorical feature
+
+    # Calculate feature frequencies (sum of each column for one-hot encoded)
+    feature_counts = X.sum().sort_values(ascending=False)
+
+    # Exclude numeric features (YearsCode)
+    categorical_features = feature_counts[~feature_counts.index.str.startswith('YearsCode')]
+
+    # Country features
+    print("\n🌍 Top 15 Country Features (most common):")
+    country_features = categorical_features[categorical_features.index.str.startswith('Country_')]
+    for i, (feature, count) in enumerate(country_features.head(15).items(), 1):
+        percentage = (count / len(X)) * 100
+        country_name = feature.replace('Country_', '')
+        print(f"  {i:2d}. {country_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
+
+    # Education level features
+    print("\n🎓 Top 10 Education Level Features (most common):")
+    edlevel_features = categorical_features[categorical_features.index.str.startswith('EdLevel_')]
+    for i, (feature, count) in enumerate(edlevel_features.head(10).items(), 1):
+        percentage = (count / len(X)) * 100
+        edu_name = feature.replace('EdLevel_', '')
+        print(f"  {i:2d}. {edu_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
+
+    print(f"\n📊 Total one-hot encoded features: {len(X.columns)}")
+    print("   - Numeric: 1 (YearsCode)")
+    print(f"   - Country: {len(country_features)}")
+    print(f"   - Education: {len(edlevel_features)}")
+
+    print("=" * 60 + "\n")
 
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(
@@ -88,7 +142,7 @@ def main():
     print(f"Test R2 score: {test_score:.4f}")
 
     # Save model and feature columns for inference
-    model_path = Path("src/model.pkl")
+    model_path = Path("models/model.pkl")
     artifacts = {
         "model": model,
         "feature_columns": list(X.columns),

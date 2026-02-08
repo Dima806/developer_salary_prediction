@@ -41,7 +41,7 @@ uv run python src/train.py
 This will:
 - Load and preprocess the survey data
 - Train an XGBoost model
-- Save the model to `src/model.pkl`
+- Save the model to `models/model.pkl`
 
 ### 4. Run the Streamlit App
 
@@ -64,6 +64,8 @@ Click "Predict Salary" to see the estimated annual salary.
 
 ### Programmatic Usage
 
+**Quick example:**
+
 ```python
 from src.schema import SalaryInput
 from src.infer import predict_salary
@@ -80,19 +82,29 @@ salary = predict_salary(input_data)
 print(f"Estimated salary: ${salary:,.0f}")
 ```
 
+**Run the example script:**
+
+```bash
+uv run python example_inference.py
+```
+
+This will show predictions for multiple sample scenarios (junior, mid-level, senior developers, different countries).
+
 ## Project Structure
 
 ```
 .
 ├── data/
 │   └── survey_results_public.csv    # Stack Overflow survey data (download required)
+├── models/
+│   └── model.pkl                    # Trained model (generated)
 ├── src/
 │   ├── __init__.py                  # Package initialization
 │   ├── schema.py                    # Pydantic models
 │   ├── train.py                     # Training script
-│   ├── infer.py                     # Inference utilities
-│   └── model.pkl                    # Trained model (generated)
+│   └── infer.py                     # Inference utilities
 ├── app.py                           # Streamlit web app
+├── example_inference.py             # Example inference script
 ├── pyproject.toml                   # Project dependencies
 └── README.md                        # This file
 ```
@@ -122,15 +134,14 @@ python src/train.py
 
 ### Running Tests
 
-```python
-# Quick test
-python -c "
-from src.schema import SalaryInput
-from src.infer import predict_salary
+**Quick one-liner test:**
+```bash
+uv run python -c "from src.schema import SalaryInput; from src.infer import predict_salary; test = SalaryInput(country='United States', years_code_pro=5.0, education_level='Bachelor'\''s degree'); print(f'Prediction: \${predict_salary(test):,.0f}')"
+```
 
-test = SalaryInput(country='United States', years_code_pro=5.0, education_level='Bachelor\\'s degree')
-print(f'Prediction: ${predict_salary(test):,.0f}')
-"
+**Or run the full example script:**
+```bash
+uv run python example_inference.py
 ```
 
 ## Troubleshooting
