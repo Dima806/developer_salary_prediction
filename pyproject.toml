@@ -1,0 +1,12 @@
+[project]
+name = "developer-salary-prediction"
+version = "0.1.0"
+description = "Simple ML app for predicting developer salaries using Stack Overflow survey data"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.0.0",
+    "scikit-learn>=1.3.0",
+    "pydantic>=2.0.0",
+    "streamlit>=1.28.0",
+]
