@@ -1,0 +1,32 @@
+Country:
+- Australia
+- Austria
+- Belgium
+- Brazil
+- Canada
+- Czech Republic
+- Denmark
+- France
+- Germany
+- India
+- Italy
+- Netherlands
+- Other
+- Poland
+- Portugal
+- Spain
+- Sweden
+- Switzerland
+- Ukraine
+- United Kingdom of Great Britain and Northern Ireland
+- United States of America
+EdLevel:
+- Associate degree (A.A., A.S., etc.)
+- Bachelor's degree (B.A., B.S., B.Eng., etc.)
+- Master's degree (M.A., M.S., M.Eng., MBA, etc.)
+- Other
+- 'Other (please specify):'
+- Primary/elementary school
+- Professional degree (JD, MD, Ph.D, Ed.D, etc.)
+- Secondary school (e.g. American high school, German Realschule or Gymnasium, etc.)
+- Some college/university study without earning a degree

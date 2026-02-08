@@ -1,24 +1,39 @@
 """Data preprocessing utilities for consistent feature engineering."""
 
+from pathlib import Path
 import pandas as pd
+import yaml
+
+# Load configuration once at module level
+_config_path = Path("config/model_parameters.yaml")
+with open(_config_path, "r") as f:
+    _config = yaml.safe_load(f)
 
 
 def reduce_cardinality(
     series: pd.Series,
-    max_categories: int = 20,
-    min_frequency: int = 50
+    max_categories: int = None,
+    min_frequency: int = None
 ) -> pd.Series:
     """
     Reduce cardinality by grouping rare categories into 'Other'.
 
     Args:
         series: Pandas Series with categorical values
-        max_categories: Maximum number of categories to keep (default: 20)
-        min_frequency: Minimum occurrences for a category to be kept (default: 50)
+        max_categories: Maximum number of categories to keep
+                       (default: from config)
+        min_frequency: Minimum occurrences for a category to be kept
+                      (default: from config)
 
     Returns:
         Series with rare categories replaced by 'Other'
     """
+    # Use config defaults if not provided
+    if max_categories is None:
+        max_categories = _config['features']['cardinality']['max_categories']
+    if min_frequency is None:
+        min_frequency = _config['features']['cardinality']['min_frequency']
+
     # Count value frequencies
     value_counts = series.value_counts()
 
@@ -47,11 +62,18 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
 
     Note:
         - Fills missing values with defaults (0 for numeric, "Unknown" for categorical)
+        - Normalizes Unicode apostrophes to regular apostrophes
         - Applies one-hot encoding with drop_first=True to avoid multicollinearity
         - Column names in output will be like: YearsCode, Country_X, EdLevel_Y
     """
     # Create a copy to avoid modifying the original
     df_processed = df.copy()
+
+    # Normalize Unicode apostrophes to regular apostrophes for consistency
+    # This handles cases where data has \u2019 (') instead of '
+    for col in ["Country", "EdLevel"]:
+        if col in df_processed.columns:
+            df_processed[col] = df_processed[col].str.replace('\u2019', "'", regex=False)
 
     # Handle column name variations (YearsCode vs YearsCodePro)
     if "YearsCodePro" in df_processed.columns and "YearsCode" not in df_processed.columns:
@@ -64,23 +86,17 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # Reduce cardinality for categorical features
     # This groups rare categories into 'Other' to prevent overfitting
-    df_processed["Country"] = reduce_cardinality(
-        df_processed["Country"],
-        max_categories=20,
-        min_frequency=50
-    )
-    df_processed["EdLevel"] = reduce_cardinality(
-        df_processed["EdLevel"],
-        max_categories=20,
-        min_frequency=50
-    )
+    # Uses config values from config/model_parameters.yaml
+    df_processed["Country"] = reduce_cardinality(df_processed["Country"])
+    df_processed["EdLevel"] = reduce_cardinality(df_processed["EdLevel"])
 
     # Select only the features we need
     feature_cols = ["Country", "YearsCode", "EdLevel"]
     df_features = df_processed[feature_cols]
 
     # Apply one-hot encoding for categorical variables
-    # drop_first=True removes the first category to avoid multicollinearity
-    df_encoded = pd.get_dummies(df_features, drop_first=True)
+    # drop_first removes the first category to avoid multicollinearity
+    drop_first = _config['features']['encoding']['drop_first']
+    df_encoded = pd.get_dummies(df_features, drop_first=drop_first)
 
     return df_encoded

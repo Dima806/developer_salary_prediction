@@ -4,6 +4,7 @@ import pickle
 from pathlib import Path
 
 import pandas as pd
+import yaml
 
 from src.schema import SalaryInput
 from src.preprocessing import prepare_features
@@ -13,13 +14,24 @@ model_path = Path("models/model.pkl")
 
 if not model_path.exists():
     raise FileNotFoundError(
-        f"Model file not found at {model_path}. Please run 'python src/train.py' first."
+        f"Model file not found at {model_path}. Please run 'python -m src.train' first."
     )
 
 with open(model_path, "rb") as f:
     artifacts = pickle.load(f)
     model = artifacts["model"]
     feature_columns = artifacts["feature_columns"]
+
+# Load valid categories for input validation
+valid_categories_path = Path("config/valid_categories.yaml")
+
+if not valid_categories_path.exists():
+    raise FileNotFoundError(
+        f"Valid categories file not found at {valid_categories_path}. Please run 'python -m src.train' first."
+    )
+
+with open(valid_categories_path, "r") as f:
+    valid_categories = yaml.safe_load(f)
 
 
 def predict_salary(data: SalaryInput) -> float:
@@ -30,7 +42,25 @@ def predict_salary(data: SalaryInput) -> float:
 
     Returns:
         Predicted annual salary in USD
+
+    Raises:
+        ValueError: If country or education_level is not in valid categories
     """
+    # Validate input against valid categories from training
+    if data.country not in valid_categories["Country"]:
+        raise ValueError(
+            f"Invalid country: '{data.country}'. "
+            f"Must be one of {len(valid_categories['Country'])} valid countries. "
+            f"Check config/valid_categories.yaml for all valid values."
+        )
+
+    if data.education_level not in valid_categories["EdLevel"]:
+        raise ValueError(
+            f"Invalid education level: '{data.education_level}'. "
+            f"Must be one of {len(valid_categories['EdLevel'])} valid education levels. "
+            f"Check config/valid_categories.yaml for all valid values."
+        )
+
     # Create a DataFrame with the input data
     input_df = pd.DataFrame(
         {

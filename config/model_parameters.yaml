@@ -1,0 +1,85 @@
+# Model Training Configuration
+# Developer Salary Prediction - XGBoost Model Parameters
+
+# Data Processing Parameters
+data:
+  # Minimum salary threshold (USD/year)
+  min_salary: 1000
+
+  # Percentile bounds for outlier removal
+  lower_percentile: 2
+  upper_percentile: 98
+
+  # Salary scaling factor (convert to kUSD)
+  salary_scale: 0.001
+
+  # Train/test split ratio
+  test_size: 0.2
+
+  # Random seed for reproducibility
+  random_state: 42
+
+# Feature Engineering Parameters
+features:
+  # Cardinality reduction settings
+  cardinality:
+    # Maximum number of categories to keep per feature
+    max_categories: 20
+
+    # Minimum occurrences for a category to be kept
+    min_frequency: 50
+
+  # One-hot encoding settings
+  encoding:
+    # Drop first category to avoid multicollinearity
+    drop_first: true
+
+# XGBoost Model Parameters
+model:
+  # Number of boosting rounds (trees)
+  n_estimators: 5000
+
+  # Learning rate (eta)
+  learning_rate: 0.01
+
+  # Maximum tree depth
+  max_depth: 6
+
+  # Minimum sum of instance weight needed in a child
+  min_child_weight: 10
+
+  # Random seed for reproducibility
+  random_state: 42
+
+  # Number of parallel threads (-1 = use all cores)
+  n_jobs: -1
+
+  # Early stopping rounds
+  early_stopping_rounds: 50
+
+  # Evaluation metric (optional - default is RMSE for regression)
+  # eval_metric: 'rmse'
+
+  # Other optional parameters (uncomment to use):
+  # subsample: 0.8                    # Subsample ratio of training instances
+  # colsample_bytree: 0.8             # Subsample ratio of columns when constructing each tree
+  # gamma: 0                          # Minimum loss reduction for split
+  # reg_alpha: 0                      # L1 regularization
+  # reg_lambda: 1                     # L2 regularization
+  # scale_pos_weight: 1               # Balancing of positive/negative weights
+
+# Training Settings
+training:
+  # Verbose output during training
+  verbose: false
+
+  # Save model artifacts
+  save_model: true
+
+  # Model output path (relative to project root)
+  model_path: "models/model.pkl"
+
+# Notes:
+# - All paths are relative to project root
+# - Modify these parameters to experiment with different model configurations
+# - After changing, retrain the model: uv run python src/train.py

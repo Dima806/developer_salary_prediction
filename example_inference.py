@@ -18,7 +18,7 @@ def main():
     input_data_1 = SalaryInput(
         country="United States of America",
         years_code_pro=5.0,
-        education_level="Bachelor's degree",
+        education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
     )
 
     print(f"Country: {input_data_1.country}")
@@ -35,7 +35,7 @@ def main():
     input_data_2 = SalaryInput(
         country="United States of America",
         years_code_pro=2.0,
-        education_level="Master’s degree (M.A., M.S., M.Eng., MBA, etc.)s",
+        education_level="Master's degree (M.A., M.S., M.Eng., MBA, etc.)",
     )
 
     print(f"Country: {input_data_2.country}")
@@ -52,7 +52,7 @@ def main():
     input_data_3 = SalaryInput(
         country="United States of America",
         years_code_pro=10.0,
-        education_level="Master’s degree (M.A., M.S., M.Eng., MBA, etc.)",
+        education_level="Master's degree (M.A., M.S., M.Eng., MBA, etc.)",
     )
 
     print(f"Country: {input_data_3.country}")
@@ -69,7 +69,7 @@ def main():
     input_data_4 = SalaryInput(
         country="Germany",
         years_code_pro=5.0,
-        education_level="Bachelor’s degree (B.A., B.S., B.Eng., etc.)",
+        education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
     )
 
     print(f"Country: {input_data_4.country}")

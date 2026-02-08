@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from src.infer import predict_salary
+from src.infer import predict_salary, valid_categories
 from src.schema import SalaryInput
 
 # Page configuration
@@ -32,42 +32,48 @@ with st.sidebar:
     )
     st.info("💡 Tip: Results are estimates based on survey averages.")
 
+    st.divider()
+    st.subheader("Model Coverage")
+    st.write(f"**Countries:** {len(valid_categories['Country'])} available")
+    st.write(f"**Education Levels:** {len(valid_categories['EdLevel'])} available")
+    st.caption("Only values from the training data are shown in the dropdowns.")
+
 # Main input form
 st.header("Enter Developer Information")
 
 col1, col2 = st.columns(2)
 
+# Get valid categories from training
+valid_countries = valid_categories["Country"]
+valid_education_levels = valid_categories["EdLevel"]
+
+# Set default values (if available)
+default_country = "United States of America" if "United States of America" in valid_countries else valid_countries[0]
+default_education = "Bachelor's degree (B.A., B.S., B.Eng., etc.)" if "Bachelor's degree (B.A., B.S., B.Eng., etc.)" in valid_education_levels else valid_education_levels[0]
+
 with col1:
-    country = st.text_input(
+    country = st.selectbox(
         "Country",
-        value="United States",
-        help="Developer's country of residence",
+        options=valid_countries,
+        index=valid_countries.index(default_country),
+        help="Developer's country of residence (only countries from training data)",
     )
 
     years = st.number_input(
         "Years of Professional Coding",
-        min_value=0.0,
-        max_value=50.0,
-        value=5.0,
-        step=0.5,
+        min_value=0,
+        max_value=50,
+        value=5,
+        step=1,
         help="Years of professional coding experience",
     )
 
 with col2:
     education = st.selectbox(
         "Education Level",
-        [
-            "Bachelor's degree",
-            "Master's degree",
-            "Some college/university study",
-            "Associate degree",
-            "Professional degree",
-            "Other doctoral degree",
-            "Secondary school",
-            "Primary/elementary school",
-            "Something else",
-        ],
-        help="Highest level of education completed",
+        options=valid_education_levels,
+        index=valid_education_levels.index(default_education),
+        help="Highest level of education completed (only levels from training data)",
     )
 
 # Prediction button

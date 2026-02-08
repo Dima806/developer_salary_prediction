@@ -35,13 +35,15 @@ Download the Stack Overflow Developer Survey CSV file:
 ### 3. Train the Model
 
 ```bash
-uv run python src/train.py
+uv run python -m src.train
 ```
 
 This will:
-- Load and preprocess the survey data
-- Train an XGBoost model
+- Load configuration from `config/model_parameters.yaml`
+- Load and preprocess the survey data (with cardinality reduction)
+- Train an XGBoost model with early stopping
 - Save the model to `models/model.pkl`
+- Generate `config/valid_categories.yaml` with valid country and education values
 
 ### 4. Run the Streamlit App
 
@@ -90,10 +92,73 @@ uv run python example_inference.py
 
 This will show predictions for multiple sample scenarios (junior, mid-level, senior developers, different countries).
 
+## Input Validation
+
+The model validates inputs against actual training data categories:
+
+- **Valid Countries**: Only countries from `config/valid_categories.yaml` (~21 countries)
+- **Valid Education Levels**: Only education levels from training data (~9 levels)
+
+The Streamlit app uses dropdown menus with only valid options. If you use the programmatic API with invalid values, you'll get a helpful error message pointing to the valid categories file.
+
+**Example validation:**
+```python
+from src.infer import predict_salary
+from src.schema import SalaryInput
+
+# This will raise ValueError - Japan not in training data after cardinality reduction
+invalid_input = SalaryInput(
+    country="Japan",  # Invalid!
+    years_code_pro=5.0,
+    education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)"
+)
+```
+
+**View valid categories:**
+```bash
+cat config/valid_categories.yaml
+```
+
+## Configuration
+
+Model parameters are centralized in [config/model_parameters.yaml](config/model_parameters.yaml). You can customize:
+
+- **Data Processing**: Salary thresholds, percentile bounds, train/test split ratio
+- **Feature Engineering**: Cardinality reduction settings (max categories, min frequency)
+- **Model Hyperparameters**: Learning rate, tree depth, early stopping, etc.
+- **Training Settings**: Verbosity, model save path
+
+**To modify parameters:**
+
+```bash
+# Edit the config file
+nano config/model_parameters.yaml
+
+# Then retrain the model
+uv run python -m src.train
+```
+
+**Example parameter changes:**
+```yaml
+# Increase model complexity
+model:
+  max_depth: 8                 # Default: 6
+  n_estimators: 10000          # Default: 5000
+
+# Keep more categories
+features:
+  cardinality:
+    max_categories: 30         # Default: 20
+    min_frequency: 100         # Default: 50
+```
+
 ## Project Structure
 
 ```
 .
+├── config/
+│   ├── model_parameters.yaml        # Model configuration
+│   └── valid_categories.yaml        # Valid input categories (generated)
 ├── data/
 │   └── survey_results_public.csv    # Stack Overflow survey data (download required)
 ├── models/
@@ -101,6 +166,7 @@ This will show predictions for multiple sample scenarios (junior, mid-level, sen
 ├── src/
 │   ├── __init__.py                  # Package initialization
 │   ├── schema.py                    # Pydantic models
+│   ├── preprocessing.py             # Feature engineering utilities
 │   ├── train.py                     # Training script
 │   └── infer.py                     # Inference utilities
 ├── app.py                           # Streamlit web app
@@ -129,7 +195,7 @@ If you want to use a different survey year or update the model:
 
 ```bash
 # Place new CSV in data/ directory
-python src/train.py
+uv run python -m src.train
 ```
 
 ### Running Tests
@@ -147,10 +213,14 @@ uv run python example_inference.py
 ## Troubleshooting
 
 ### "Model file not found"
-- Run `python src/train.py` first to generate the model
+- Run `uv run python -m src.train` first to generate the model
 
 ### "Data file not found"
 - Download the Stack Overflow survey CSV and place it in `data/`
+
+### "Configuration file not found"
+- The `config/model_parameters.yaml` file should exist in the project root
+- Check that you're running commands from the project root directory
 
 ### Dependencies issues
 - Run `uv sync` to ensure all packages are installed

@@ -5,14 +5,21 @@ from pathlib import Path
 
 import pandas as pd
 import numpy as np
+import yaml
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 
-from preprocessing import prepare_features
+from preprocessing import prepare_features, reduce_cardinality
 
 
 def main():
     """Train and save the salary prediction model."""
+    # Load configuration
+    print("Loading configuration...")
+    config_path = Path("config/model_parameters.yaml")
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+
     print("Loading data...")
     data_path = Path("data/survey_results_public.csv")
 
@@ -33,10 +40,13 @@ def main():
     print("Removing null, extremely small and large reported salaries")
     # select main label
     main_label = "ConvertedCompYearly"
-    # select records with main label more than 1000 USD/year
-    df = df[df[main_label] > 1000]
-    # further exclude 2% of smallest and 2% of highest salaries
-    P = np.percentile(df[main_label], [2, 98])
+    # select records with main label more than min_salary threshold
+    min_salary = config['data']['min_salary']
+    df = df[df[main_label] > min_salary]
+    # further exclude outliers based on percentile bounds
+    lower_pct = config['data']['lower_percentile']
+    upper_pct = config['data']['upper_percentile']
+    P = np.percentile(df[main_label], [lower_pct, upper_pct])
     df = df[(df[main_label] > P[0]) & (df[main_label] < P[1])]
 
     print(df.shape)
@@ -45,9 +55,36 @@ def main():
     df = df.dropna(subset=[main_label])
     print(f"After removing missing targets: {len(df):,} rows")
 
-    # Apply consistent feature transformations (same as used in inference)
+    # Apply preprocessing first to get cardinality-reduced categories
+    df_copy = df.copy()
+
+    # Normalize Unicode apostrophes to regular apostrophes for consistency
+    df_copy["Country"] = df_copy["Country"].str.replace('\u2019', "'", regex=False)
+    df_copy["EdLevel"] = df_copy["EdLevel"].str.replace('\u2019', "'", regex=False)
+
+    # Apply cardinality reduction
+    df_copy["Country"] = reduce_cardinality(df_copy["Country"])
+    df_copy["EdLevel"] = reduce_cardinality(df_copy["EdLevel"])
+
+    # Now apply full feature transformations for model training
     X = prepare_features(df)
     y = df[main_label]
+
+    # Save valid categories after cardinality reduction for validation during inference
+    # Extract unique values from the reduced dataframe
+    country_values = df_copy["Country"].dropna().unique().tolist()
+    edlevel_values = df_copy["EdLevel"].dropna().unique().tolist()
+
+    valid_categories = {
+        "Country": sorted(country_values),
+        "EdLevel": sorted(edlevel_values),
+    }
+
+    valid_categories_path = Path("config/valid_categories.yaml")
+    with open(valid_categories_path, "w") as f:
+        yaml.dump(valid_categories, f, default_flow_style=False, sort_keys=False)
+
+    print(f"\nSaved {len(valid_categories['Country'])} valid countries and {len(valid_categories['EdLevel'])} valid education levels to {valid_categories_path}")
 
     print(f"\nFeature matrix shape: {X.shape}")
     print(f"Total features: {X.shape[1]}")
@@ -112,25 +149,28 @@ def main():
 
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+        X, y,
+        test_size=config['data']['test_size'],
+        random_state=config['data']['random_state']
     )
 
     # Train model
     print("Training XGBoost model...")
+    model_config = config['model']
     model = XGBRegressor(
-        n_estimators=5000,
-        learning_rate=0.01,
-        max_depth=6,
-        min_child_weight=10,
-        random_state=42,
-        n_jobs=-1,
-        early_stopping_rounds=50,
+        n_estimators=model_config['n_estimators'],
+        learning_rate=model_config['learning_rate'],
+        max_depth=model_config['max_depth'],
+        min_child_weight=model_config['min_child_weight'],
+        random_state=model_config['random_state'],
+        n_jobs=model_config['n_jobs'],
+        early_stopping_rounds=model_config['early_stopping_rounds'],
     )
     model.fit(
         X_train,
         y_train,
         eval_set=[(X_test, y_test)],
-        verbose=False,
+        verbose=config['training']['verbose'],
     )
 
     print(f"Best iteration: {model.best_iteration + 1} (early stopping at {model.n_estimators} max)")
@@ -142,7 +182,9 @@ def main():
     print(f"Test R2 score: {test_score:.4f}")
 
     # Save model and feature columns for inference
-    model_path = Path("models/model.pkl")
+    model_path = Path(config['training']['model_path'])
+    model_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
+
     artifacts = {
         "model": model,
         "feature_columns": list(X.columns),
