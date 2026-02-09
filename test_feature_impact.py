@@ -141,14 +141,14 @@ def test_devtype_impact():
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
     }
 
-    # Test with different developer types
+    # Test with different developer types (using actual values from trained model)
     test_devtypes = [
         "Developer, front-end",
         "Developer, back-end",
         "Developer, full-stack",
-        "Data scientist or machine learning specialist",
+        "Data scientist",  # Changed from "Data scientist or machine learning specialist"
         "Engineering manager",
-        "DevOps specialist",
+        "DevOps engineer or professional",  # Changed from "DevOps specialist"
     ]
 
     # Filter to only developer types that exist in valid categories
@@ -182,13 +182,13 @@ def test_combined_features():
     print("TEST 5: Combined Feature Variations")
     print("=" * 70)
 
-    # Create diverse combinations
+    # Create diverse combinations (using actual values from trained model)
     test_cases = [
         ("India", 2, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, back-end"),
         ("Germany", 5, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Developer, full-stack"),
         ("United States of America", 10, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Engineering manager"),
         ("Poland", 15, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, front-end"),
-        ("Brazil", 5, "Some college/university study without earning a degree", "DevOps specialist"),
+        ("Brazil", 5, "Some college/university study without earning a degree", "DevOps engineer or professional"),  # Changed from "DevOps specialist"
     ]
 
     predictions = []

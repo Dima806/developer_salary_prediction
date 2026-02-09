@@ -56,6 +56,9 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
 
     Args:
         df: DataFrame with columns: Country, YearsCode (or YearsCodePro), EdLevel, DevType
+            NOTE: During training, cardinality reduction should be applied to df
+            BEFORE calling this function. During inference, valid_categories.yaml
+            ensures only valid (already-reduced) categories are used.
 
     Returns:
         DataFrame with one-hot encoded features ready for model input
@@ -65,6 +68,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
         - Normalizes Unicode apostrophes to regular apostrophes
         - Applies one-hot encoding with drop_first=True to avoid multicollinearity
         - Column names in output will be like: YearsCode, Country_X, EdLevel_Y, DevType_Z
+        - Does NOT apply cardinality reduction (must be done before calling this)
     """
     # Create a copy to avoid modifying the original
     df_processed = df.copy()
@@ -85,20 +89,20 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     df_processed["EdLevel"] = df_processed["EdLevel"].fillna("Unknown")
     df_processed["DevType"] = df_processed["DevType"].fillna("Unknown")
 
-    # Reduce cardinality for categorical features
-    # This groups rare categories into 'Other' to prevent overfitting
-    # Uses config values from config/model_parameters.yaml
-    df_processed["Country"] = reduce_cardinality(df_processed["Country"])
-    df_processed["EdLevel"] = reduce_cardinality(df_processed["EdLevel"])
-    df_processed["DevType"] = reduce_cardinality(df_processed["DevType"])
+    # NOTE: Cardinality reduction is NOT applied here
+    # It should be applied during training BEFORE calling this function
+    # During inference, valid_categories.yaml ensures only valid values are used
 
     # Select only the features we need
     feature_cols = ["Country", "YearsCode", "EdLevel", "DevType"]
     df_features = df_processed[feature_cols]
 
     # Apply one-hot encoding for categorical variables
-    # drop_first removes the first category to avoid multicollinearity
-    drop_first = _config['features']['encoding']['drop_first']
+    # For inference (single rows), we need drop_first=False to create columns
+    # The reindex in infer.py will align with training columns
+    # For training (many rows), we use the config value
+    is_inference = len(df_features) == 1
+    drop_first = False if is_inference else _config['features']['encoding']['drop_first']
     df_encoded = pd.get_dummies(df_features, drop_first=drop_first)
 
     return df_encoded

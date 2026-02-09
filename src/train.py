@@ -68,6 +68,12 @@ def main():
     df_copy["EdLevel"] = reduce_cardinality(df_copy["EdLevel"])
     df_copy["DevType"] = reduce_cardinality(df_copy["DevType"])
 
+    # Apply cardinality reduction to the actual training data as well
+    # (prepare_features no longer does this internally)
+    df["Country"] = reduce_cardinality(df["Country"])
+    df["EdLevel"] = reduce_cardinality(df["EdLevel"])
+    df["DevType"] = reduce_cardinality(df["DevType"])
+
     # Now apply full feature transformations for model training
     X = prepare_features(df)
     y = df[main_label]
