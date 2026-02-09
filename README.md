@@ -238,7 +238,7 @@ uv run python example_inference.py
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file
+Apache 2.0 License - see [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
