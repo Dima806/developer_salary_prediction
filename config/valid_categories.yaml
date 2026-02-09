@@ -30,3 +30,25 @@ EdLevel:
 - Professional degree (JD, MD, Ph.D, Ed.D, etc.)
 - Secondary school (e.g. American high school, German Realschule or Gymnasium, etc.)
 - Some college/university study without earning a degree
+DevType:
+- AI/ML engineer
+- Academic researcher
+- Architect, software or solutions
+- Cloud infrastructure engineer
+- Data engineer
+- Data scientist
+- DevOps engineer or professional
+- Developer, QA or test
+- Developer, back-end
+- Developer, desktop or enterprise applications
+- Developer, embedded applications or devices
+- Developer, front-end
+- Developer, full-stack
+- Developer, game or graphics
+- Developer, mobile
+- Engineering manager
+- Other
+- 'Other (please specify):'
+- Senior executive (C-suite, VP, etc.)
+- Student
+- System administrator

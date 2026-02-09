@@ -9,7 +9,7 @@ import yaml
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 
-from preprocessing import prepare_features, reduce_cardinality
+from src.preprocessing import prepare_features, reduce_cardinality
 
 
 def main():
@@ -32,7 +32,7 @@ def main():
     # Load only required columns to save memory
     df = pd.read_csv(
         data_path,
-        usecols=["Country", "YearsCode", "EdLevel", "ConvertedCompYearly"],
+        usecols=["Country", "YearsCode", "EdLevel", "DevType", "ConvertedCompYearly"],
     )
 
     print(f"Loaded {len(df):,} rows")
@@ -61,10 +61,12 @@ def main():
     # Normalize Unicode apostrophes to regular apostrophes for consistency
     df_copy["Country"] = df_copy["Country"].str.replace('\u2019', "'", regex=False)
     df_copy["EdLevel"] = df_copy["EdLevel"].str.replace('\u2019', "'", regex=False)
+    df_copy["DevType"] = df_copy["DevType"].str.replace('\u2019', "'", regex=False)
 
     # Apply cardinality reduction
     df_copy["Country"] = reduce_cardinality(df_copy["Country"])
     df_copy["EdLevel"] = reduce_cardinality(df_copy["EdLevel"])
+    df_copy["DevType"] = reduce_cardinality(df_copy["DevType"])
 
     # Now apply full feature transformations for model training
     X = prepare_features(df)
@@ -74,17 +76,19 @@ def main():
     # Extract unique values from the reduced dataframe
     country_values = df_copy["Country"].dropna().unique().tolist()
     edlevel_values = df_copy["EdLevel"].dropna().unique().tolist()
+    devtype_values = df_copy["DevType"].dropna().unique().tolist()
 
     valid_categories = {
         "Country": sorted(country_values),
         "EdLevel": sorted(edlevel_values),
+        "DevType": sorted(devtype_values),
     }
 
     valid_categories_path = Path("config/valid_categories.yaml")
     with open(valid_categories_path, "w") as f:
         yaml.dump(valid_categories, f, default_flow_style=False, sort_keys=False)
 
-    print(f"\nSaved {len(valid_categories['Country'])} valid countries and {len(valid_categories['EdLevel'])} valid education levels to {valid_categories_path}")
+    print(f"\nSaved {len(valid_categories['Country'])} valid countries, {len(valid_categories['EdLevel'])} valid education levels, and {len(valid_categories['DevType'])} valid developer types to {valid_categories_path}")
 
     print(f"\nFeature matrix shape: {X.shape}")
     print(f"Total features: {X.shape[1]}")
@@ -105,6 +109,12 @@ def main():
     top_edu = df["EdLevel"].value_counts().head(10)
     for edu, count in top_edu.items():
         print(f"  - {edu}: {count:,} ({count/len(df)*100:.1f}%)")
+
+    # Show top developer types
+    print("\n👨‍💻 Top Developer Types:")
+    top_devtype = df["DevType"].value_counts().head(10)
+    for devtype, count in top_devtype.items():
+        print(f"  - {devtype}: {count:,} ({count/len(df)*100:.1f}%)")
 
     # Show YearsCode statistics
     print("\n💼 Years of Coding Experience:")
@@ -140,10 +150,19 @@ def main():
         edu_name = feature.replace('EdLevel_', '')
         print(f"  {i:2d}. {edu_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
 
+    # Developer type features
+    print("\n👨‍💻 Top 10 Developer Type Features (most common):")
+    devtype_features = categorical_features[categorical_features.index.str.startswith('DevType_')]
+    for i, (feature, count) in enumerate(devtype_features.head(10).items(), 1):
+        percentage = (count / len(X)) * 100
+        devtype_name = feature.replace('DevType_', '')
+        print(f"  {i:2d}. {devtype_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
+
     print(f"\n📊 Total one-hot encoded features: {len(X.columns)}")
     print("   - Numeric: 1 (YearsCode)")
     print(f"   - Country: {len(country_features)}")
     print(f"   - Education: {len(edlevel_features)}")
+    print(f"   - DevType: {len(devtype_features)}")
 
     print("=" * 60 + "\n")
 

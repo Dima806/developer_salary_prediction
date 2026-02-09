@@ -55,7 +55,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     during training and inference, preventing data leakage and inconsistencies.
 
     Args:
-        df: DataFrame with columns: Country, YearsCode (or YearsCodePro), EdLevel
+        df: DataFrame with columns: Country, YearsCode (or YearsCodePro), EdLevel, DevType
 
     Returns:
         DataFrame with one-hot encoded features ready for model input
@@ -64,14 +64,14 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
         - Fills missing values with defaults (0 for numeric, "Unknown" for categorical)
         - Normalizes Unicode apostrophes to regular apostrophes
         - Applies one-hot encoding with drop_first=True to avoid multicollinearity
-        - Column names in output will be like: YearsCode, Country_X, EdLevel_Y
+        - Column names in output will be like: YearsCode, Country_X, EdLevel_Y, DevType_Z
     """
     # Create a copy to avoid modifying the original
     df_processed = df.copy()
 
     # Normalize Unicode apostrophes to regular apostrophes for consistency
     # This handles cases where data has \u2019 (') instead of '
-    for col in ["Country", "EdLevel"]:
+    for col in ["Country", "EdLevel", "DevType"]:
         if col in df_processed.columns:
             df_processed[col] = df_processed[col].str.replace('\u2019', "'", regex=False)
 
@@ -83,15 +83,17 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     df_processed["YearsCode"] = df_processed["YearsCode"].fillna(0)
     df_processed["Country"] = df_processed["Country"].fillna("Unknown")
     df_processed["EdLevel"] = df_processed["EdLevel"].fillna("Unknown")
+    df_processed["DevType"] = df_processed["DevType"].fillna("Unknown")
 
     # Reduce cardinality for categorical features
     # This groups rare categories into 'Other' to prevent overfitting
     # Uses config values from config/model_parameters.yaml
     df_processed["Country"] = reduce_cardinality(df_processed["Country"])
     df_processed["EdLevel"] = reduce_cardinality(df_processed["EdLevel"])
+    df_processed["DevType"] = reduce_cardinality(df_processed["DevType"])
 
     # Select only the features we need
-    feature_cols = ["Country", "YearsCode", "EdLevel"]
+    feature_cols = ["Country", "YearsCode", "EdLevel", "DevType"]
     df_features = df_processed[feature_cols]
 
     # Apply one-hot encoding for categorical variables

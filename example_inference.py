@@ -19,11 +19,13 @@ def main():
         country="United States of America",
         years_code_pro=5.0,
         education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+        dev_type="Developer, full-stack",
     )
 
     print(f"Country: {input_data_1.country}")
     print(f"Years of Professional Coding: {input_data_1.years_code_pro}")
     print(f"Education Level: {input_data_1.education_level}")
+    print(f"Developer Type: {input_data_1.dev_type}")
 
     salary_1 = predict_salary(input_data_1)
     print(f"💰 Predicted Salary: ${salary_1:,.2f} USD/year")
@@ -36,11 +38,13 @@ def main():
         country="United States of America",
         years_code_pro=2.0,
         education_level="Master's degree (M.A., M.S., M.Eng., MBA, etc.)",
+        dev_type="Developer, front-end",
     )
 
     print(f"Country: {input_data_2.country}")
     print(f"Years of Professional Coding: {input_data_2.years_code_pro}")
     print(f"Education Level: {input_data_2.education_level}")
+    print(f"Developer Type: {input_data_2.dev_type}")
 
     salary_2 = predict_salary(input_data_2)
     print(f"💰 Predicted Salary: ${salary_2:,.2f} USD/year")
@@ -53,11 +57,13 @@ def main():
         country="United States of America",
         years_code_pro=10.0,
         education_level="Master's degree (M.A., M.S., M.Eng., MBA, etc.)",
+        dev_type="Engineering manager",
     )
 
     print(f"Country: {input_data_3.country}")
     print(f"Years of Professional Coding: {input_data_3.years_code_pro}")
     print(f"Education Level: {input_data_3.education_level}")
+    print(f"Developer Type: {input_data_3.dev_type}")
 
     salary_3 = predict_salary(input_data_3)
     print(f"💰 Predicted Salary: ${salary_3:,.2f} USD/year")
@@ -70,11 +76,13 @@ def main():
         country="Germany",
         years_code_pro=5.0,
         education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+        dev_type="Developer, back-end",
     )
 
     print(f"Country: {input_data_4.country}")
     print(f"Years of Professional Coding: {input_data_4.years_code_pro}")
     print(f"Education Level: {input_data_4.education_level}")
+    print(f"Developer Type: {input_data_4.dev_type}")
 
     salary_4 = predict_salary(input_data_4)
     print(f"💰 Predicted Salary: ${salary_4:,.2f} USD/year")

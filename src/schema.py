@@ -11,6 +11,7 @@ class SalaryInput(BaseModel):
         ..., ge=0, description="Years of professional coding experience"
     )
     education_level: str = Field(..., description="Education level")
+    dev_type: str = Field(..., description="Developer type")
 
     class Config:
         """Pydantic configuration."""
@@ -20,5 +21,6 @@ class SalaryInput(BaseModel):
                 "country": "United States",
                 "years_code_pro": 5.0,
                 "education_level": "Bachelor's degree",
+                "dev_type": "Developer, back-end",
             }
         }

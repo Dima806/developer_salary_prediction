@@ -30,7 +30,7 @@ Download the Stack Overflow Developer Survey CSV file:
    data/survey_results_public.csv
    ```
 
-**Required columns:** `Country`, `YearsCodePro`, `EdLevel`, `ConvertedCompYearly`
+**Required columns:** `Country`, `YearsCode`, `EdLevel`, `DevType`, `ConvertedCompYearly`
 
 ### 3. Train the Model
 
@@ -43,7 +43,7 @@ This will:
 - Load and preprocess the survey data (with cardinality reduction)
 - Train an XGBoost model with early stopping
 - Save the model to `models/model.pkl`
-- Generate `config/valid_categories.yaml` with valid country and education values
+- Generate `config/valid_categories.yaml` with valid country, education, and developer type values
 
 ### 4. Run the Streamlit App
 
@@ -61,6 +61,7 @@ Launch the Streamlit app and enter:
 - **Country**: Developer's country
 - **Years of Professional Coding**: Experience in years
 - **Education Level**: Highest degree completed
+- **Developer Type**: Primary developer role
 
 Click "Predict Salary" to see the estimated annual salary.
 
@@ -74,9 +75,10 @@ from src.infer import predict_salary
 
 # Create input
 input_data = SalaryInput(
-    country="United States",
+    country="United States of America",
     years_code_pro=5.0,
-    education_level="Bachelor's degree"
+    education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+    dev_type="Developer, full-stack"
 )
 
 # Get prediction
@@ -98,6 +100,7 @@ The model validates inputs against actual training data categories:
 
 - **Valid Countries**: Only countries from `config/valid_categories.yaml` (~21 countries)
 - **Valid Education Levels**: Only education levels from training data (~9 levels)
+- **Valid Developer Types**: Only developer types from training data (~20 types)
 
 The Streamlit app uses dropdown menus with only valid options. If you use the programmatic API with invalid values, you'll get a helpful error message pointing to the valid categories file.
 
@@ -110,7 +113,8 @@ from src.schema import SalaryInput
 invalid_input = SalaryInput(
     country="Japan",  # Invalid!
     years_code_pro=5.0,
-    education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)"
+    education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+    dev_type="Developer, back-end"
 )
 ```
 
@@ -202,7 +206,7 @@ uv run python -m src.train
 
 **Quick one-liner test:**
 ```bash
-uv run python -c "from src.schema import SalaryInput; from src.infer import predict_salary; test = SalaryInput(country='United States', years_code_pro=5.0, education_level='Bachelor'\''s degree'); print(f'Prediction: \${predict_salary(test):,.0f}')"
+uv run python -c "from src.schema import SalaryInput; from src.infer import predict_salary; test = SalaryInput(country='United States of America', years_code_pro=5.0, education_level='Bachelor'\''s degree (B.A., B.S., B.Eng., etc.)', dev_type='Developer, full-stack'); print(f'Prediction: \${predict_salary(test):,.0f}')"
 ```
 
 **Or run the full example script:**

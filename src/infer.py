@@ -61,12 +61,20 @@ def predict_salary(data: SalaryInput) -> float:
             f"Check config/valid_categories.yaml for all valid values."
         )
 
+    if data.dev_type not in valid_categories["DevType"]:
+        raise ValueError(
+            f"Invalid developer type: '{data.dev_type}'. "
+            f"Must be one of {len(valid_categories['DevType'])} valid developer types. "
+            f"Check config/valid_categories.yaml for all valid values."
+        )
+
     # Create a DataFrame with the input data
     input_df = pd.DataFrame(
         {
             "Country": [data.country],
             "YearsCodePro": [data.years_code_pro],
             "EdLevel": [data.education_level],
+            "DevType": [data.dev_type],
         }
     )
 
