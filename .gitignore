@@ -212,8 +212,9 @@ data/*.csv
 data/*.zip
 
 # Trained model artifacts
-models/*.pkl
-models/*.joblib
+# Note: Model files are included in the repo for deployment
+# models/*.pkl
+# models/*.joblib
 
 # LLM
 .llm/

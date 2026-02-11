@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Data (don't include raw survey data in Docker image)
+data/
+
+# Testing and development
+test*.py
+debug*.py
+diagnose*.py
+example_inference.py
+
+# Documentation
+.llm/
+*.md
+!README.md
+
+# CI/CD
+.github/
+
+# Project specific
+pyproject.toml
+uv.lock

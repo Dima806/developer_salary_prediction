@@ -214,6 +214,61 @@ uv run python -c "from src.schema import SalaryInput; from src.infer import pred
 uv run python example_inference.py
 ```
 
+## Deployment
+
+### Hugging Face Spaces
+
+This application is Docker-ready for deployment on Hugging Face Spaces:
+
+**1. Build the Docker image:**
+```bash
+docker build -t developer-salary-predictor .
+```
+
+**2. Test locally:**
+```bash
+docker run -p 8501:8501 developer-salary-predictor
+```
+
+Then visit `http://localhost:8501`
+
+**3. Deploy to Hugging Face:**
+
+1. Create a new Space on [Hugging Face](https://huggingface.co/new-space)
+2. Select "Docker" as the SDK
+3. Clone your Space repository
+4. Copy these files to your Space:
+
+   ```text
+   Dockerfile
+   requirements.txt
+   src/
+   config/
+   models/
+   ```
+
+5. Push to your Space:
+   ```bash
+   git add .
+   git commit -m "Initial deployment"
+   git push
+   ```
+
+**Note:** The pre-trained model (`models/model.pkl`) and configuration (`config/valid_categories.yaml`) are included in the Docker image. If you want to use a different model, retrain locally first, then rebuild the Docker image.
+
+### Alternative: Local Deployment
+
+**Using uv (recommended for development):**
+```bash
+uv run streamlit run src/streamlit_app.py
+```
+
+**Using pip:**
+```bash
+pip install -r requirements.txt
+streamlit run src/streamlit_app.py
+```
+
 ## Troubleshooting
 
 ### "Model file not found"
