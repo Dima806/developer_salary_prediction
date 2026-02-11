@@ -242,6 +242,7 @@ Then visit `http://localhost:8501`
    ```text
    Dockerfile
    requirements.txt
+   app.py
    src/
    config/
    models/
@@ -260,13 +261,13 @@ Then visit `http://localhost:8501`
 
 **Using uv (recommended for development):**
 ```bash
-uv run streamlit run src/streamlit_app.py
+uv run streamlit run app.py
 ```
 
 **Using pip:**
 ```bash
 pip install -r requirements.txt
-streamlit run src/streamlit_app.py
+streamlit run app.py
 ```
 
 ## Troubleshooting
