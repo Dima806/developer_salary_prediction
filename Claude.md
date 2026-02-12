@@ -75,7 +75,9 @@ from src.infer import predict_salary
 input_data = SalaryInput(
     country="United States",
     years_code=5.0,
-    education_level="Bachelor's degree"
+    education_level="Bachelor's degree",
+    dev_type="Developer, back-end",
+    industry="Software Development"
 )
 salary = predict_salary(input_data)
 ```
@@ -119,6 +121,8 @@ The dataset must include these columns:
 - `Country` - Developer location
 - `YearsCode` - Total years of coding (including education)
 - `EdLevel` - Education level
+- `DevType` - Developer type
+- `Industry` - Industry the developer works in
 - `ConvertedCompYearly` - Annual salary (target variable)
 
 ### Model Expectations
@@ -151,7 +155,9 @@ from src.schema import SalaryInput
 test_input = SalaryInput(
     country="United States",
     years_code=3.0,
-    education_level="Bachelor's degree"
+    education_level="Bachelor's degree",
+    dev_type="Developer, back-end",
+    industry="Software Development"
 )
 print(predict_salary(test_input))
 ```

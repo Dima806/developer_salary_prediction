@@ -14,6 +14,7 @@ def test_years_experience_impact():
         "country": "United States of America",
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "dev_type": "Developer, full-stack",
+        "industry": "Software Development",
     }
 
     # Test with different years of experience
@@ -46,6 +47,7 @@ def test_country_impact():
         "years_code": 5.0,
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "dev_type": "Developer, full-stack",
+        "industry": "Software Development",
     }
 
     # Test with different countries (select diverse ones)
@@ -92,6 +94,7 @@ def test_education_impact():
         "country": "United States of America",
         "years_code": 5.0,
         "dev_type": "Developer, full-stack",
+        "industry": "Software Development",
     }
 
     # Test with different education levels
@@ -139,6 +142,7 @@ def test_devtype_impact():
         "country": "United States of America",
         "years_code": 5.0,
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+        "industry": "Software Development",
     }
 
     # Test with different developer types (using actual values from trained model)
@@ -146,9 +150,9 @@ def test_devtype_impact():
         "Developer, front-end",
         "Developer, back-end",
         "Developer, full-stack",
-        "Data scientist",  # Changed from "Data scientist or machine learning specialist"
+        "Data scientist",
         "Engineering manager",
-        "DevOps engineer or professional",  # Changed from "DevOps specialist"
+        "DevOps engineer or professional",
     ]
 
     # Filter to only developer types that exist in valid categories
@@ -176,36 +180,88 @@ def test_devtype_impact():
         return False
 
 
+def test_industry_impact():
+    """Test that changing industry changes prediction."""
+    print("\n" + "=" * 70)
+    print("TEST 5: Industry Impact")
+    print("=" * 70)
+
+    base_input = {
+        "country": "United States of America",
+        "years_code": 5.0,
+        "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+        "dev_type": "Developer, full-stack",
+    }
+
+    # Test with different industries (using actual values from trained model)
+    test_industries = [
+        "Software Development",
+        "Fintech",
+        "Banking/Financial Services",
+        "Healthcare",
+        "Manufacturing",
+        "Government",
+    ]
+
+    # Filter to only industries that exist in valid categories
+    test_industries = [i for i in test_industries if i in valid_categories["Industry"]]
+
+    predictions = []
+    for industry in test_industries:
+        input_data = SalaryInput(**base_input, industry=industry)
+        salary = predict_salary(input_data)
+        predictions.append(salary)
+        print(f"  Industry: {industry[:50]:50s} -> Salary: ${salary:,.2f}")
+
+    # Check if predictions are different
+    unique_predictions = len(set(predictions))
+    if unique_predictions == len(predictions):
+        print(f"\n✅ PASS: All {len(predictions)} predictions are different")
+        return True
+    elif unique_predictions == 1:
+        print(f"\n❌ FAIL: All predictions are IDENTICAL (${predictions[0]:,.2f})")
+        print("   This indicates the model is NOT using industry as a feature!")
+        return False
+    else:
+        print(f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions")
+        print(f"   Duplicate salaries found - possible feature issue")
+        return False
+
+
 def test_combined_features():
     """Test that combining different features produces expected variations."""
     print("\n" + "=" * 70)
-    print("TEST 5: Combined Feature Variations")
+    print("TEST 6: Combined Feature Variations")
     print("=" * 70)
 
     # Create diverse combinations (using actual values from trained model)
     test_cases = [
-        ("India", 2, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, back-end"),
-        ("Germany", 5, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Developer, full-stack"),
-        ("United States of America", 10, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Engineering manager"),
-        ("Poland", 15, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, front-end"),
-        ("Brazil", 5, "Some college/university study without earning a degree", "DevOps engineer or professional"),  # Changed from "DevOps specialist"
+        ("India", 2, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, back-end", "Software Development"),
+        ("Germany", 5, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Developer, full-stack", "Manufacturing"),
+        ("United States of America", 10, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Engineering manager", "Fintech"),
+        ("Poland", 15, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, front-end", "Healthcare"),
+        ("Brazil", 5, "Some college/university study without earning a degree", "DevOps engineer or professional", "Government"),
     ]
 
     predictions = []
-    for country, years, education, devtype in test_cases:
+    for country, years, education, devtype, industry in test_cases:
         # Skip if not in valid categories
-        if country not in valid_categories["Country"] or education not in valid_categories["EdLevel"] or devtype not in valid_categories["DevType"]:
+        if (country not in valid_categories["Country"]
+                or education not in valid_categories["EdLevel"]
+                or devtype not in valid_categories["DevType"]
+                or industry not in valid_categories["Industry"]):
             continue
 
         input_data = SalaryInput(
             country=country,
             years_code=years,
             education_level=education,
-            dev_type=devtype
+            dev_type=devtype,
+            industry=industry,
         )
         salary = predict_salary(input_data)
         predictions.append(salary)
-        print(f"  {country[:15]:15s} | {years:2d}y | {education[:25]:25s} | {devtype[:25]:25s} -> ${salary:,.2f}")
+        print(f"  {country[:15]:15s} | {years:2d}y | {education[:25]:25s} | {devtype[:25]:25s} | {industry[:20]:20s} -> ${salary:,.2f}")
 
     # Check if predictions are different
     unique_predictions = len(set(predictions))
@@ -232,12 +288,14 @@ def print_feature_analysis():
     country_features = [f for f in feature_columns if f.startswith('Country_')]
     edlevel_features = [f for f in feature_columns if f.startswith('EdLevel_')]
     devtype_features = [f for f in feature_columns if f.startswith('DevType_')]
-    numeric_features = [f for f in feature_columns if not f.startswith(('Country_', 'EdLevel_', 'DevType_'))]
+    industry_features = [f for f in feature_columns if f.startswith('Industry_')]
+    numeric_features = [f for f in feature_columns if not f.startswith(('Country_', 'EdLevel_', 'DevType_', 'Industry_'))]
 
     print(f"  - Numeric features: {len(numeric_features)} -> {numeric_features}")
     print(f"  - Country features: {len(country_features)}")
     print(f"  - Education features: {len(edlevel_features)}")
     print(f"  - DevType features: {len(devtype_features)}")
+    print(f"  - Industry features: {len(industry_features)}")
 
     if len(country_features) > 0:
         print(f"\nSample country features:")
@@ -254,6 +312,11 @@ def print_feature_analysis():
         for feat in devtype_features[:5]:
             print(f"    - {feat}")
 
+    if len(industry_features) > 0:
+        print(f"\nSample industry features:")
+        for feat in industry_features[:5]:
+            print(f"    - {feat}")
+
     # Check if there are any features at all
     if len(country_features) == 0:
         print("\n⚠️  WARNING: No country features found!")
@@ -261,6 +324,8 @@ def print_feature_analysis():
         print("\n⚠️  WARNING: No education features found!")
     if len(devtype_features) == 0:
         print("\n⚠️  WARNING: No developer type features found!")
+    if len(industry_features) == 0:
+        print("\n⚠️  WARNING: No industry features found!")
 
 
 def main():
@@ -279,6 +344,7 @@ def main():
         "Country": test_country_impact(),
         "Education Level": test_education_impact(),
         "Developer Type": test_devtype_impact(),
+        "Industry": test_industry_impact(),
         "Combined Features": test_combined_features(),
     }
 

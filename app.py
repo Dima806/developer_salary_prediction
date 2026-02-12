@@ -29,6 +29,7 @@ with st.sidebar:
         - Total years of coding experience (including education)
         - Education level
         - Developer type
+        - Industry
         """
     )
     st.info("💡 Tip: Results are estimates based on survey averages.")
@@ -38,6 +39,7 @@ with st.sidebar:
     st.write(f"**Countries:** {len(valid_categories['Country'])} available")
     st.write(f"**Education Levels:** {len(valid_categories['EdLevel'])} available")
     st.write(f"**Developer Types:** {len(valid_categories['DevType'])} available")
+    st.write(f"**Industries:** {len(valid_categories['Industry'])} available")
     st.caption("Only values from the training data are shown in the dropdowns.")
 
 # Main input form
@@ -49,11 +51,13 @@ col1, col2 = st.columns(2)
 valid_countries = valid_categories["Country"]
 valid_education_levels = valid_categories["EdLevel"]
 valid_dev_types = valid_categories["DevType"]
+valid_industries = valid_categories["Industry"]
 
 # Set default values (if available)
 default_country = "United States of America" if "United States of America" in valid_countries else valid_countries[0]
 default_education = "Bachelor's degree (B.A., B.S., B.Eng., etc.)" if "Bachelor's degree (B.A., B.S., B.Eng., etc.)" in valid_education_levels else valid_education_levels[0]
 default_dev_type = "Developer, back-end" if "Developer, back-end" in valid_dev_types else valid_dev_types[0]
+default_industry = "Software Development" if "Software Development" in valid_industries else valid_industries[0]
 
 with col1:
     country = st.selectbox(
@@ -67,7 +71,7 @@ with col1:
         "Years of Coding (Total)",
         min_value=0,
         max_value=50,
-        value=5,
+        value=15,
         step=1,
         help="Including any education, how many years have you been coding in total?",
     )
@@ -87,6 +91,13 @@ with col2:
         help="Primary developer role (only types from training data)",
     )
 
+industry = st.selectbox(
+    "Industry",
+    options=valid_industries,
+    index=valid_industries.index(default_industry),
+    help="Industry the developer works in (only industries from training data)",
+)
+
 # Prediction button
 if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
     try:
@@ -96,6 +107,7 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
             years_code=years,
             education_level=education,
             dev_type=dev_type,
+            industry=industry,
         )
 
         # Make prediction
