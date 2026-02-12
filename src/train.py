@@ -43,11 +43,14 @@ def main():
     # select records with main label more than min_salary threshold
     min_salary = config['data']['min_salary']
     df = df[df[main_label] > min_salary]
-    # further exclude outliers based on percentile bounds
-    lower_pct = config['data']['lower_percentile']
-    upper_pct = config['data']['upper_percentile']
-    P = np.percentile(df[main_label], [lower_pct, upper_pct])
-    df = df[(df[main_label] > P[0]) & (df[main_label] < P[1])]
+    # Exclude outliers based on percentile bounds PER COUNTRY
+    # This preserves records from lower-paid and higher-paid countries
+    # that would otherwise be removed by global percentile filtering
+    lower_pct = config['data']['lower_percentile'] / 100
+    upper_pct = config['data']['upper_percentile'] / 100
+    lower_bound = df.groupby("Country")[main_label].transform("quantile", lower_pct)
+    upper_bound = df.groupby("Country")[main_label].transform("quantile", upper_pct)
+    df = df[(df[main_label] > lower_bound) & (df[main_label] < upper_bound)]
 
     print(df.shape)
 
