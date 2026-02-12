@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import yaml
 from xgboost import XGBRegressor
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold, train_test_split
 
 from src.preprocessing import prepare_features, reduce_cardinality
 
@@ -175,17 +175,60 @@ def main():
 
     print("=" * 60 + "\n")
 
-    # Split data
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y,
-        test_size=config['data']['test_size'],
-        random_state=config['data']['random_state']
+    # Cross-validation for robust evaluation
+    n_splits = config['data'].get('cv_splits', 5)
+    random_state = config['data']['random_state']
+    model_config = config['model']
+
+    print(f"Running {n_splits}-fold cross-validation...")
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+
+    train_scores = []
+    test_scores = []
+    best_iterations = []
+
+    for fold, (train_idx, test_idx) in enumerate(kf.split(X), 1):
+        X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+        y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+
+        model = XGBRegressor(
+            n_estimators=model_config['n_estimators'],
+            learning_rate=model_config['learning_rate'],
+            max_depth=model_config['max_depth'],
+            min_child_weight=model_config['min_child_weight'],
+            random_state=model_config['random_state'],
+            n_jobs=model_config['n_jobs'],
+            early_stopping_rounds=model_config['early_stopping_rounds'],
+        )
+        model.fit(
+            X_train, y_train,
+            eval_set=[(X_test, y_test)],
+            verbose=False,
+        )
+
+        train_r2 = model.score(X_train, y_train)
+        test_r2 = model.score(X_test, y_test)
+        train_scores.append(train_r2)
+        test_scores.append(test_r2)
+        best_iterations.append(model.best_iteration + 1)
+        print(f"  Fold {fold}: Train R2 = {train_r2:.4f}, Test R2 = {test_r2:.4f} (best iter: {model.best_iteration + 1})")
+
+    avg_train = np.mean(train_scores)
+    avg_test = np.mean(test_scores)
+    std_test = np.std(test_scores)
+    avg_best_iter = int(np.mean(best_iterations))
+    print(f"\nCV Average Train R2: {avg_train:.4f}")
+    print(f"CV Average Test R2:  {avg_test:.4f} (+/- {std_test:.4f})")
+    print(f"CV Average best iteration: {avg_best_iter}")
+
+    # Train final model on all data for deployment
+    # Use a small held-out split for early stopping only
+    print("\nTraining final model on full dataset...")
+    X_train_final, X_es, y_train_final, y_es = train_test_split(
+        X, y, test_size=0.1, random_state=random_state
     )
 
-    # Train model
-    print("Training XGBoost model...")
-    model_config = config['model']
-    model = XGBRegressor(
+    final_model = XGBRegressor(
         n_estimators=model_config['n_estimators'],
         learning_rate=model_config['learning_rate'],
         max_depth=model_config['max_depth'],
@@ -194,27 +237,19 @@ def main():
         n_jobs=model_config['n_jobs'],
         early_stopping_rounds=model_config['early_stopping_rounds'],
     )
-    model.fit(
-        X_train,
-        y_train,
-        eval_set=[(X_test, y_test)],
+    final_model.fit(
+        X_train_final, y_train_final,
+        eval_set=[(X_es, y_es)],
         verbose=config['training']['verbose'],
     )
-
-    print(f"Best iteration: {model.best_iteration + 1} (early stopping at {model.n_estimators} max)")
-
-    # Evaluate
-    train_score = model.score(X_train, y_train)
-    test_score = model.score(X_test, y_test)
-    print(f"Training R2 score: {train_score:.4f}")
-    print(f"Test R2 score: {test_score:.4f}")
+    print(f"Final model best iteration: {final_model.best_iteration + 1}")
 
     # Save model and feature columns for inference
     model_path = Path(config['training']['model_path'])
-    model_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
+    model_path.parent.mkdir(parents=True, exist_ok=True)
 
     artifacts = {
-        "model": model,
+        "model": final_model,
         "feature_columns": list(X.columns),
     }
 
