@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from src.infer import predict_salary, valid_categories
+from src.infer import predict_salary, get_local_currency, valid_categories
 from src.schema import SalaryInput
 
 # Page configuration
@@ -26,7 +26,7 @@ with st.sidebar:
         This app uses an XGBoost (gradient boosting) model trained on Stack Overflow
         Developer Survey data to predict annual salaries based on:
         - Country
-        - Years of professional coding experience
+        - Total years of coding experience (including education)
         - Education level
         - Developer type
         """
@@ -64,12 +64,12 @@ with col1:
     )
 
     years = st.number_input(
-        "Years of Professional Coding",
+        "Years of Coding (Total)",
         min_value=0,
         max_value=50,
         value=5,
         step=1,
-        help="Years of professional coding experience",
+        help="Including any education, how many years have you been coding in total?",
     )
 
 with col2:
@@ -93,7 +93,7 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
         # Create input model
         input_data = SalaryInput(
             country=country,
-            years_code_pro=years,
+            years_code=years,
             education_level=education,
             dev_type=dev_type,
         )
@@ -104,11 +104,29 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
 
         # Display result
         st.success("Prediction Complete!")
-        st.metric(
-            label="Estimated Annual Salary",
-            value=f"${salary:,.0f}",
-            help="Predicted annual compensation in USD",
-        )
+
+        # Show USD and local currency side by side
+        local = get_local_currency(country, salary)
+        if local and local["code"] != "USD":
+            col_usd, col_local = st.columns(2)
+            with col_usd:
+                st.metric(
+                    label="Estimated Annual Salary (USD)",
+                    value=f"${salary:,.0f}",
+                    help="Predicted annual compensation in USD",
+                )
+            with col_local:
+                st.metric(
+                    label=f"Estimated Annual Salary ({local['code']})",
+                    value=f"{local['salary_local']:,.0f} {local['code']}",
+                    help=f"Converted using survey-derived rate: 1 USD = {local['rate']} {local['code']} ({local['name']})",
+                )
+        else:
+            st.metric(
+                label="Estimated Annual Salary",
+                value=f"${salary:,.0f}",
+                help="Predicted annual compensation in USD",
+            )
 
     except FileNotFoundError:
         st.error(

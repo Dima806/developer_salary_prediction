@@ -55,7 +55,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     during training and inference, preventing data leakage and inconsistencies.
 
     Args:
-        df: DataFrame with columns: Country, YearsCode (or YearsCodePro), EdLevel, DevType
+        df: DataFrame with columns: Country, YearsCode, EdLevel, DevType
             NOTE: During training, cardinality reduction should be applied to df
             BEFORE calling this function. During inference, valid_categories.yaml
             ensures only valid (already-reduced) categories are used.
@@ -79,9 +79,9 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
         if col in df_processed.columns:
             df_processed[col] = df_processed[col].str.replace('\u2019', "'", regex=False)
 
-    # Handle column name variations (YearsCode vs YearsCodePro)
+    # Handle legacy column name (YearsCodePro -> YearsCode)
     if "YearsCodePro" in df_processed.columns and "YearsCode" not in df_processed.columns:
-        df_processed["YearsCode"] = df_processed["YearsCodePro"]
+        df_processed.rename(columns={"YearsCodePro": "YearsCode"}, inplace=True)
 
     # Fill missing values with defaults
     df_processed["YearsCode"] = df_processed["YearsCode"].fillna(0)

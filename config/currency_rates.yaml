@@ -1,0 +1,84 @@
+Australia:
+  code: AUD
+  name: Australian dollar
+  rate: 1.54
+Austria:
+  code: EUR
+  name: European Euro
+  rate: 0.86
+Belgium:
+  code: EUR
+  name: European Euro
+  rate: 0.86
+Brazil:
+  code: BRL
+  name: Brazilian real
+  rate: 5.49
+Canada:
+  code: CAD
+  name: Canadian dollar
+  rate: 1.37
+Czech Republic:
+  code: CZK
+  name: Czech koruna
+  rate: 21.36
+Denmark:
+  code: DKK
+  name: Danish krone
+  rate: 6.43
+France:
+  code: EUR
+  name: European Euro
+  rate: 0.86
+Germany:
+  code: EUR
+  name: European Euro
+  rate: 0.86
+India:
+  code: INR
+  name: Indian rupee
+  rate: 86.03
+Italy:
+  code: EUR
+  name: European Euro
+  rate: 0.86
+Netherlands:
+  code: EUR
+  name: European Euro
+  rate: 0.86
+Other:
+  code: EUR
+  name: European Euro
+  rate: 0.86
+Poland:
+  code: PLN
+  name: Polish zloty
+  rate: 3.66
+Portugal:
+  code: EUR
+  name: European Euro
+  rate: 0.86
+Spain:
+  code: EUR
+  name: European Euro
+  rate: 0.86
+Sweden:
+  code: SEK
+  name: Swedish krona
+  rate: 9.54
+Switzerland:
+  code: CHF
+  name: Swiss franc
+  rate: 0.81
+Ukraine:
+  code: UAH
+  name: Ukrainian hryvnia
+  rate: 41.73
+United Kingdom of Great Britain and Northern Ireland:
+  code: GBP
+  name: Pound sterling
+  rate: 0.73
+United States of America:
+  code: USD
+  name: United States dollar
+  rate: 1.0

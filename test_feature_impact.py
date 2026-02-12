@@ -7,7 +7,7 @@ from src.infer import predict_salary, valid_categories
 def test_years_experience_impact():
     """Test that changing years of experience changes prediction."""
     print("\n" + "=" * 70)
-    print("TEST 1: Years of Professional Coding Impact")
+    print("TEST 1: Total Years of Coding Impact")
     print("=" * 70)
 
     base_input = {
@@ -21,7 +21,7 @@ def test_years_experience_impact():
     predictions = []
 
     for years in years_tests:
-        input_data = SalaryInput(**base_input, years_code_pro=years)
+        input_data = SalaryInput(**base_input, years_code=years)
         salary = predict_salary(input_data)
         predictions.append(salary)
         print(f"  Years: {years:2d} -> Salary: ${salary:,.2f}")
@@ -43,7 +43,7 @@ def test_country_impact():
     print("=" * 70)
 
     base_input = {
-        "years_code_pro": 5.0,
+        "years_code": 5.0,
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "dev_type": "Developer, full-stack",
     }
@@ -90,7 +90,7 @@ def test_education_impact():
 
     base_input = {
         "country": "United States of America",
-        "years_code_pro": 5.0,
+        "years_code": 5.0,
         "dev_type": "Developer, full-stack",
     }
 
@@ -137,7 +137,7 @@ def test_devtype_impact():
 
     base_input = {
         "country": "United States of America",
-        "years_code_pro": 5.0,
+        "years_code": 5.0,
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
     }
 
@@ -199,7 +199,7 @@ def test_combined_features():
 
         input_data = SalaryInput(
             country=country,
-            years_code_pro=years,
+            years_code=years,
             education_level=education,
             dev_type=devtype
         )

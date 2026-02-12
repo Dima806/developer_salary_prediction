@@ -32,7 +32,8 @@ def main():
     # Load only required columns to save memory
     df = pd.read_csv(
         data_path,
-        usecols=["Country", "YearsCode", "EdLevel", "DevType", "ConvertedCompYearly"],
+        usecols=["Country", "YearsCode", "EdLevel", "DevType",
+                 "Currency", "CompTotal", "ConvertedCompYearly"],
     )
 
     print(f"Loaded {len(df):,} rows")
@@ -98,6 +99,50 @@ def main():
         yaml.dump(valid_categories, f, default_flow_style=False, sort_keys=False)
 
     print(f"\nSaved {len(valid_categories['Country'])} valid countries, {len(valid_categories['EdLevel'])} valid education levels, and {len(valid_categories['DevType'])} valid developer types to {valid_categories_path}")
+
+    # Compute currency conversion rates per country
+    # Use the original data with Currency and CompTotal columns
+    print("\nComputing currency conversion rates per country...")
+    currency_df = df[["Country", "Currency", "CompTotal", main_label]].dropna()
+    # Extract 3-letter currency code from values like "EUR European Euro"
+    currency_df = currency_df.copy()
+    currency_df["CurrencyCode"] = currency_df["Currency"].str.split(r"\s+", n=1).str[0]
+    currency_df["CurrencyName"] = currency_df["Currency"].str.split(r"\s+", n=1).str[1]
+    # Compute conversion rate: local currency / USD
+    currency_df["rate"] = currency_df["CompTotal"] / currency_df[main_label]
+    # Filter out unreasonable rates (negative, zero, or extreme)
+    currency_df = currency_df[(currency_df["rate"] > 0.001) & (currency_df["rate"] < 100000)]
+
+    currency_rates = {}
+    for country in valid_categories["Country"]:
+        country_data = currency_df[currency_df["Country"] == country]
+        if country_data.empty:
+            continue
+        # Find the most common currency for this country
+        most_common = country_data["CurrencyCode"].mode()
+        if most_common.empty:
+            continue
+        code = most_common.iloc[0]
+        # Get the full name from the first matching record
+        name_row = country_data[country_data["CurrencyCode"] == code].iloc[0]
+        full_name = name_row["CurrencyName"]
+        # Compute median conversion rate for this country+currency pair
+        rates = country_data[country_data["CurrencyCode"] == code]["rate"]
+        median_rate = round(float(rates.median()), 2)
+        currency_rates[country] = {
+            "code": code,
+            "name": full_name,
+            "rate": median_rate,
+        }
+
+    currency_rates_path = Path("config/currency_rates.yaml")
+    with open(currency_rates_path, "w") as f:
+        yaml.dump(currency_rates, f, default_flow_style=False, sort_keys=True,
+                  allow_unicode=True)
+
+    print(f"Saved currency rates for {len(currency_rates)} countries to {currency_rates_path}")
+    for country, info in sorted(currency_rates.items()):
+        print(f"  {country:45s} -> {info['code']} ({info['name']}, rate: {info['rate']})")
 
     print(f"\nFeature matrix shape: {X.shape}")
     print(f"Total features: {X.shape[1]}")

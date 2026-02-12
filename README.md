@@ -59,7 +59,7 @@ The app will open in your browser at `http://localhost:8501`
 
 Launch the Streamlit app and enter:
 - **Country**: Developer's country
-- **Years of Professional Coding**: Experience in years
+- **Years of Coding (Total)**: Total years coding including education
 - **Education Level**: Highest degree completed
 - **Developer Type**: Primary developer role
 
@@ -76,7 +76,7 @@ from src.infer import predict_salary
 # Create input
 input_data = SalaryInput(
     country="United States of America",
-    years_code_pro=5.0,
+    years_code=5.0,
     education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
     dev_type="Developer, full-stack"
 )
@@ -112,7 +112,7 @@ from src.schema import SalaryInput
 # This will raise ValueError - Japan not in training data after cardinality reduction
 invalid_input = SalaryInput(
     country="Japan",  # Invalid!
-    years_code_pro=5.0,
+    years_code=5.0,
     education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
     dev_type="Developer, back-end"
 )
@@ -206,7 +206,7 @@ uv run python -m src.train
 
 **Quick one-liner test:**
 ```bash
-uv run python -c "from src.schema import SalaryInput; from src.infer import predict_salary; test = SalaryInput(country='United States of America', years_code_pro=5.0, education_level='Bachelor'\''s degree (B.A., B.S., B.Eng., etc.)', dev_type='Developer, full-stack'); print(f'Prediction: \${predict_salary(test):,.0f}')"
+uv run python -c "from src.schema import SalaryInput; from src.infer import predict_salary; test = SalaryInput(country='United States of America', years_code=5.0, education_level='Bachelor'\''s degree (B.A., B.S., B.Eng., etc.)', dev_type='Developer, full-stack'); print(f'Prediction: \${predict_salary(test):,.0f}')"
 ```
 
 **Or run the full example script:**

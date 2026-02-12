@@ -33,6 +33,30 @@ if not valid_categories_path.exists():
 with open(valid_categories_path, "r") as f:
     valid_categories = yaml.safe_load(f)
 
+# Load currency conversion rates
+currency_rates_path = Path("config/currency_rates.yaml")
+currency_rates = {}
+if currency_rates_path.exists():
+    with open(currency_rates_path, "r") as f:
+        currency_rates = yaml.safe_load(f) or {}
+
+
+def get_local_currency(country: str, salary_usd: float) -> dict | None:
+    """Convert USD salary to local currency for a given country.
+
+    Returns:
+        Dict with code, name, rate, and salary_local, or None if unavailable.
+    """
+    if country not in currency_rates:
+        return None
+    info = currency_rates[country]
+    return {
+        "code": info["code"],
+        "name": info["name"],
+        "rate": info["rate"],
+        "salary_local": round(salary_usd * info["rate"], 2),
+    }
+
 
 def predict_salary(data: SalaryInput) -> float:
     """Predict salary based on input features.
@@ -72,7 +96,7 @@ def predict_salary(data: SalaryInput) -> float:
     input_df = pd.DataFrame(
         {
             "Country": [data.country],
-            "YearsCodePro": [data.years_code_pro],
+            "YearsCode": [data.years_code],
             "EdLevel": [data.education_level],
             "DevType": [data.dev_type],
         }

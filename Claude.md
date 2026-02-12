@@ -74,7 +74,7 @@ from src.infer import predict_salary
 
 input_data = SalaryInput(
     country="United States",
-    years_code_pro=5.0,
+    years_code=5.0,
     education_level="Bachelor's degree"
 )
 salary = predict_salary(input_data)
@@ -117,7 +117,7 @@ Streamlit UI:
 ### Data Requirements
 The dataset must include these columns:
 - `Country` - Developer location
-- `YearsCodePro` - Professional coding experience
+- `YearsCode` - Total years of coding (including education)
 - `EdLevel` - Education level
 - `ConvertedCompYearly` - Annual salary (target variable)
 
@@ -150,7 +150,7 @@ from src.schema import SalaryInput
 
 test_input = SalaryInput(
     country="United States",
-    years_code_pro=3.0,
+    years_code=3.0,
     education_level="Bachelor's degree"
 )
 print(predict_salary(test_input))
