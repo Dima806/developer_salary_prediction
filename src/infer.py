@@ -99,6 +99,13 @@ def predict_salary(data: SalaryInput) -> float:
             f"Check config/valid_categories.yaml for all valid values."
         )
 
+    if data.age not in valid_categories["Age"]:
+        raise ValueError(
+            f"Invalid age: '{data.age}'. "
+            f"Must be one of {len(valid_categories['Age'])} valid age ranges. "
+            f"Check config/valid_categories.yaml for all valid values."
+        )
+
     # Create a DataFrame with the input data
     input_df = pd.DataFrame(
         {
@@ -107,6 +114,7 @@ def predict_salary(data: SalaryInput) -> float:
             "EdLevel": [data.education_level],
             "DevType": [data.dev_type],
             "Industry": [data.industry],
+            "Age": [data.age],
         }
     )
 

@@ -55,7 +55,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     during training and inference, preventing data leakage and inconsistencies.
 
     Args:
-        df: DataFrame with columns: Country, YearsCode, EdLevel, DevType, Industry
+        df: DataFrame with columns: Country, YearsCode, EdLevel, DevType, Industry, Age
             NOTE: During training, cardinality reduction should be applied to df
             BEFORE calling this function. During inference, valid_categories.yaml
             ensures only valid (already-reduced) categories are used.
@@ -67,7 +67,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
         - Fills missing values with defaults (0 for numeric, "Unknown" for categorical)
         - Normalizes Unicode apostrophes to regular apostrophes
         - Applies one-hot encoding with drop_first=True to avoid multicollinearity
-        - Column names in output will be like: YearsCode, Country_X, EdLevel_Y, DevType_Z, Industry_W
+        - Column names in output will be like: YearsCode, Country_X, EdLevel_Y, DevType_Z, Industry_W, Age_V
         - Does NOT apply cardinality reduction (must be done before calling this)
     """
     # Create a copy to avoid modifying the original
@@ -75,7 +75,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # Normalize Unicode apostrophes to regular apostrophes for consistency
     # This handles cases where data has \u2019 (') instead of '
-    for col in ["Country", "EdLevel", "DevType", "Industry"]:
+    for col in ["Country", "EdLevel", "DevType", "Industry", "Age"]:
         if col in df_processed.columns:
             df_processed[col] = df_processed[col].str.replace('\u2019', "'", regex=False)
 
@@ -89,13 +89,14 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     df_processed["EdLevel"] = df_processed["EdLevel"].fillna("Unknown")
     df_processed["DevType"] = df_processed["DevType"].fillna("Unknown")
     df_processed["Industry"] = df_processed["Industry"].fillna("Unknown")
+    df_processed["Age"] = df_processed["Age"].fillna("Unknown")
 
     # NOTE: Cardinality reduction is NOT applied here
     # It should be applied during training BEFORE calling this function
     # During inference, valid_categories.yaml ensures only valid values are used
 
     # Select only the features we need
-    feature_cols = ["Country", "YearsCode", "EdLevel", "DevType", "Industry"]
+    feature_cols = ["Country", "YearsCode", "EdLevel", "DevType", "Industry", "Age"]
     df_features = df_processed[feature_cols]
 
     # Apply one-hot encoding for categorical variables

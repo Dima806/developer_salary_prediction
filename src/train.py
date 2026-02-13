@@ -32,7 +32,7 @@ def main():
     # Load only required columns to save memory
     df = pd.read_csv(
         data_path,
-        usecols=["Country", "YearsCode", "EdLevel", "DevType", "Industry",
+        usecols=["Country", "YearsCode", "EdLevel", "DevType", "Industry", "Age",
                  "Currency", "CompTotal", "ConvertedCompYearly"],
     )
 
@@ -67,12 +67,14 @@ def main():
     df_copy["EdLevel"] = df_copy["EdLevel"].str.replace('\u2019', "'", regex=False)
     df_copy["DevType"] = df_copy["DevType"].str.replace('\u2019', "'", regex=False)
     df_copy["Industry"] = df_copy["Industry"].str.replace('\u2019', "'", regex=False)
+    df_copy["Age"] = df_copy["Age"].str.replace('\u2019', "'", regex=False)
 
     # Apply cardinality reduction
     df_copy["Country"] = reduce_cardinality(df_copy["Country"])
     df_copy["EdLevel"] = reduce_cardinality(df_copy["EdLevel"])
     df_copy["DevType"] = reduce_cardinality(df_copy["DevType"])
     df_copy["Industry"] = reduce_cardinality(df_copy["Industry"])
+    df_copy["Age"] = reduce_cardinality(df_copy["Age"])
 
     # Apply cardinality reduction to the actual training data as well
     # (prepare_features no longer does this internally)
@@ -80,6 +82,7 @@ def main():
     df["EdLevel"] = reduce_cardinality(df["EdLevel"])
     df["DevType"] = reduce_cardinality(df["DevType"])
     df["Industry"] = reduce_cardinality(df["Industry"])
+    df["Age"] = reduce_cardinality(df["Age"])
 
     # Now apply full feature transformations for model training
     X = prepare_features(df)
@@ -91,19 +94,21 @@ def main():
     edlevel_values = df_copy["EdLevel"].dropna().unique().tolist()
     devtype_values = df_copy["DevType"].dropna().unique().tolist()
     industry_values = df_copy["Industry"].dropna().unique().tolist()
+    age_values = df_copy["Age"].dropna().unique().tolist()
 
     valid_categories = {
         "Country": sorted(country_values),
         "EdLevel": sorted(edlevel_values),
         "DevType": sorted(devtype_values),
         "Industry": sorted(industry_values),
+        "Age": sorted(age_values),
     }
 
     valid_categories_path = Path("config/valid_categories.yaml")
     with open(valid_categories_path, "w") as f:
         yaml.dump(valid_categories, f, default_flow_style=False, sort_keys=False)
 
-    print(f"\nSaved {len(valid_categories['Country'])} valid countries, {len(valid_categories['EdLevel'])} valid education levels, {len(valid_categories['DevType'])} valid developer types, and {len(valid_categories['Industry'])} valid industries to {valid_categories_path}")
+    print(f"\nSaved {len(valid_categories['Country'])} valid countries, {len(valid_categories['EdLevel'])} valid education levels, {len(valid_categories['DevType'])} valid developer types, {len(valid_categories['Industry'])} valid industries, and {len(valid_categories['Age'])} valid age ranges to {valid_categories_path}")
 
     # Compute currency conversion rates per country
     # Use the original data with Currency and CompTotal columns
@@ -181,6 +186,12 @@ def main():
     for industry, count in top_industry.items():
         print(f"  - {industry}: {count:,} ({count/len(df)*100:.1f}%)")
 
+    # Show age distribution
+    print("\n🎂 Age Distribution:")
+    top_age = df["Age"].value_counts().head(10)
+    for age, count in top_age.items():
+        print(f"  - {age}: {count:,} ({count/len(df)*100:.1f}%)")
+
     # Show YearsCode statistics
     print("\n💼 Years of Coding Experience:")
     print(f"  - Min: {df['YearsCode'].min():.1f}")
@@ -231,12 +242,21 @@ def main():
         industry_name = feature.replace('Industry_', '')
         print(f"  {i:2d}. {industry_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
 
+    # Age features
+    print("\n🎂 Top 10 Age Features (most common):")
+    age_features = categorical_features[categorical_features.index.str.startswith('Age_')]
+    for i, (feature, count) in enumerate(age_features.head(10).items(), 1):
+        percentage = (count / len(X)) * 100
+        age_name = feature.replace('Age_', '')
+        print(f"  {i:2d}. {age_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
+
     print(f"\n📊 Total one-hot encoded features: {len(X.columns)}")
     print("   - Numeric: 1 (YearsCode)")
     print(f"   - Country: {len(country_features)}")
     print(f"   - Education: {len(edlevel_features)}")
     print(f"   - DevType: {len(devtype_features)}")
     print(f"   - Industry: {len(industry_features)}")
+    print(f"   - Age: {len(age_features)}")
 
     print("=" * 60 + "\n")
 

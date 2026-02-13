@@ -15,6 +15,7 @@ class SalaryInput(BaseModel):
     education_level: str = Field(..., description="Education level")
     dev_type: str = Field(..., description="Developer type")
     industry: str = Field(..., description="Industry the developer works in")
+    age: str = Field(..., description="Developer's age range")
 
     class Config:
         """Pydantic configuration."""
@@ -26,5 +27,6 @@ class SalaryInput(BaseModel):
                 "education_level": "Bachelor's degree",
                 "dev_type": "Developer, back-end",
                 "industry": "Software Development",
+                "age": "25-34 years old",
             }
         }

@@ -15,6 +15,7 @@ def test_years_experience_impact():
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
+        "age": "25-34 years old",
     }
 
     # Test with different years of experience
@@ -48,6 +49,7 @@ def test_country_impact():
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
+        "age": "25-34 years old",
     }
 
     # Test with different countries (select diverse ones)
@@ -95,6 +97,7 @@ def test_education_impact():
         "years_code": 5.0,
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
+        "age": "25-34 years old",
     }
 
     # Test with different education levels
@@ -143,6 +146,7 @@ def test_devtype_impact():
         "years_code": 5.0,
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "industry": "Software Development",
+        "age": "25-34 years old",
     }
 
     # Test with different developer types (using actual values from trained model)
@@ -191,6 +195,7 @@ def test_industry_impact():
         "years_code": 5.0,
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "dev_type": "Developer, full-stack",
+        "age": "25-34 years old",
     }
 
     # Test with different industries (using actual values from trained model)
@@ -228,28 +233,77 @@ def test_industry_impact():
         return False
 
 
+def test_age_impact():
+    """Test that changing age changes prediction."""
+    print("\n" + "=" * 70)
+    print("TEST 6: Age Impact")
+    print("=" * 70)
+
+    base_input = {
+        "country": "United States of America",
+        "years_code": 5.0,
+        "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+        "dev_type": "Developer, full-stack",
+        "industry": "Software Development",
+    }
+
+    # Test with different age ranges (using actual values from trained model)
+    test_ages = [
+        "18-24 years old",
+        "25-34 years old",
+        "35-44 years old",
+        "45-54 years old",
+        "55-64 years old",
+    ]
+
+    # Filter to only ages that exist in valid categories
+    test_ages = [a for a in test_ages if a in valid_categories["Age"]]
+
+    predictions = []
+    for age in test_ages:
+        input_data = SalaryInput(**base_input, age=age)
+        salary = predict_salary(input_data)
+        predictions.append(salary)
+        print(f"  Age: {age[:50]:50s} -> Salary: ${salary:,.2f}")
+
+    # Check if predictions are different
+    unique_predictions = len(set(predictions))
+    if unique_predictions == len(predictions):
+        print(f"\n✅ PASS: All {len(predictions)} predictions are different")
+        return True
+    elif unique_predictions == 1:
+        print(f"\n❌ FAIL: All predictions are IDENTICAL (${predictions[0]:,.2f})")
+        print("   This indicates the model is NOT using age as a feature!")
+        return False
+    else:
+        print(f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions")
+        print(f"   Duplicate salaries found - possible feature issue")
+        return False
+
+
 def test_combined_features():
     """Test that combining different features produces expected variations."""
     print("\n" + "=" * 70)
-    print("TEST 6: Combined Feature Variations")
+    print("TEST 7: Combined Feature Variations")
     print("=" * 70)
 
     # Create diverse combinations (using actual values from trained model)
     test_cases = [
-        ("India", 2, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, back-end", "Software Development"),
-        ("Germany", 5, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Developer, full-stack", "Manufacturing"),
-        ("United States of America", 10, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Engineering manager", "Fintech"),
-        ("Poland", 15, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, front-end", "Healthcare"),
-        ("Brazil", 5, "Some college/university study without earning a degree", "DevOps engineer or professional", "Government"),
+        ("India", 2, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, back-end", "Software Development", "18-24 years old"),
+        ("Germany", 5, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Developer, full-stack", "Manufacturing", "25-34 years old"),
+        ("United States of America", 10, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Engineering manager", "Fintech", "35-44 years old"),
+        ("Poland", 15, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, front-end", "Healthcare", "45-54 years old"),
+        ("Brazil", 5, "Some college/university study without earning a degree", "DevOps engineer or professional", "Government", "25-34 years old"),
     ]
 
     predictions = []
-    for country, years, education, devtype, industry in test_cases:
+    for country, years, education, devtype, industry, age in test_cases:
         # Skip if not in valid categories
         if (country not in valid_categories["Country"]
                 or education not in valid_categories["EdLevel"]
                 or devtype not in valid_categories["DevType"]
-                or industry not in valid_categories["Industry"]):
+                or industry not in valid_categories["Industry"]
+                or age not in valid_categories["Age"]):
             continue
 
         input_data = SalaryInput(
@@ -258,10 +312,11 @@ def test_combined_features():
             education_level=education,
             dev_type=devtype,
             industry=industry,
+            age=age,
         )
         salary = predict_salary(input_data)
         predictions.append(salary)
-        print(f"  {country[:15]:15s} | {years:2d}y | {education[:25]:25s} | {devtype[:25]:25s} | {industry[:20]:20s} -> ${salary:,.2f}")
+        print(f"  {country[:15]:15s} | {years:2d}y | {education[:25]:25s} | {devtype[:25]:25s} | {industry[:20]:20s} | {age[:15]:15s} -> ${salary:,.2f}")
 
     # Check if predictions are different
     unique_predictions = len(set(predictions))
@@ -289,13 +344,15 @@ def print_feature_analysis():
     edlevel_features = [f for f in feature_columns if f.startswith('EdLevel_')]
     devtype_features = [f for f in feature_columns if f.startswith('DevType_')]
     industry_features = [f for f in feature_columns if f.startswith('Industry_')]
-    numeric_features = [f for f in feature_columns if not f.startswith(('Country_', 'EdLevel_', 'DevType_', 'Industry_'))]
+    age_features = [f for f in feature_columns if f.startswith('Age_')]
+    numeric_features = [f for f in feature_columns if not f.startswith(('Country_', 'EdLevel_', 'DevType_', 'Industry_', 'Age_'))]
 
     print(f"  - Numeric features: {len(numeric_features)} -> {numeric_features}")
     print(f"  - Country features: {len(country_features)}")
     print(f"  - Education features: {len(edlevel_features)}")
     print(f"  - DevType features: {len(devtype_features)}")
     print(f"  - Industry features: {len(industry_features)}")
+    print(f"  - Age features: {len(age_features)}")
 
     if len(country_features) > 0:
         print(f"\nSample country features:")
@@ -317,6 +374,11 @@ def print_feature_analysis():
         for feat in industry_features[:5]:
             print(f"    - {feat}")
 
+    if len(age_features) > 0:
+        print(f"\nSample age features:")
+        for feat in age_features[:5]:
+            print(f"    - {feat}")
+
     # Check if there are any features at all
     if len(country_features) == 0:
         print("\n⚠️  WARNING: No country features found!")
@@ -326,6 +388,8 @@ def print_feature_analysis():
         print("\n⚠️  WARNING: No developer type features found!")
     if len(industry_features) == 0:
         print("\n⚠️  WARNING: No industry features found!")
+    if len(age_features) == 0:
+        print("\n⚠️  WARNING: No age features found!")
 
 
 def main():
@@ -345,6 +409,7 @@ def main():
         "Education Level": test_education_impact(),
         "Developer Type": test_devtype_impact(),
         "Industry": test_industry_impact(),
+        "Age": test_age_impact(),
         "Combined Features": test_combined_features(),
     }
 

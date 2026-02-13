@@ -77,7 +77,8 @@ input_data = SalaryInput(
     years_code=5.0,
     education_level="Bachelor's degree",
     dev_type="Developer, back-end",
-    industry="Software Development"
+    industry="Software Development",
+    age="25-34 years old"
 )
 salary = predict_salary(input_data)
 ```
@@ -123,6 +124,7 @@ The dataset must include these columns:
 - `EdLevel` - Education level
 - `DevType` - Developer type
 - `Industry` - Industry the developer works in
+- `Age` - Developer's age range
 - `ConvertedCompYearly` - Annual salary (target variable)
 
 ### Model Expectations
@@ -157,7 +159,8 @@ test_input = SalaryInput(
     years_code=3.0,
     education_level="Bachelor's degree",
     dev_type="Developer, back-end",
-    industry="Software Development"
+    industry="Software Development",
+    age="25-34 years old"
 )
 print(predict_salary(test_input))
 ```

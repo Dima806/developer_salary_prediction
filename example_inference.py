@@ -21,6 +21,7 @@ def main():
         education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         dev_type="Developer, full-stack",
         industry="Software Development",
+        age="25-34 years old",
     )
 
     print(f"Country: {input_data_1.country}")
@@ -28,6 +29,7 @@ def main():
     print(f"Education Level: {input_data_1.education_level}")
     print(f"Developer Type: {input_data_1.dev_type}")
     print(f"Industry: {input_data_1.industry}")
+    print(f"Age: {input_data_1.age}")
 
     salary_1 = predict_salary(input_data_1)
     print(f"💰 Predicted Salary: ${salary_1:,.2f} USD/year")
@@ -42,6 +44,7 @@ def main():
         education_level="Master's degree (M.A., M.S., M.Eng., MBA, etc.)",
         dev_type="Developer, front-end",
         industry="Fintech",
+        age="18-24 years old",
     )
 
     print(f"Country: {input_data_2.country}")
@@ -49,6 +52,7 @@ def main():
     print(f"Education Level: {input_data_2.education_level}")
     print(f"Developer Type: {input_data_2.dev_type}")
     print(f"Industry: {input_data_2.industry}")
+    print(f"Age: {input_data_2.age}")
 
     salary_2 = predict_salary(input_data_2)
     print(f"💰 Predicted Salary: ${salary_2:,.2f} USD/year")
@@ -63,6 +67,7 @@ def main():
         education_level="Master's degree (M.A., M.S., M.Eng., MBA, etc.)",
         dev_type="Engineering manager",
         industry="Banking/Financial Services",
+        age="35-44 years old",
     )
 
     print(f"Country: {input_data_3.country}")
@@ -70,6 +75,7 @@ def main():
     print(f"Education Level: {input_data_3.education_level}")
     print(f"Developer Type: {input_data_3.dev_type}")
     print(f"Industry: {input_data_3.industry}")
+    print(f"Age: {input_data_3.age}")
 
     salary_3 = predict_salary(input_data_3)
     print(f"💰 Predicted Salary: ${salary_3:,.2f} USD/year")
@@ -84,6 +90,7 @@ def main():
         education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         dev_type="Developer, back-end",
         industry="Manufacturing",
+        age="25-34 years old",
     )
 
     print(f"Country: {input_data_4.country}")
@@ -91,6 +98,7 @@ def main():
     print(f"Education Level: {input_data_4.education_level}")
     print(f"Developer Type: {input_data_4.dev_type}")
     print(f"Industry: {input_data_4.industry}")
+    print(f"Age: {input_data_4.age}")
 
     salary_4 = predict_salary(input_data_4)
     print(f"💰 Predicted Salary: ${salary_4:,.2f} USD/year")
