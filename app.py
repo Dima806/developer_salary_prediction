@@ -27,6 +27,7 @@ with st.sidebar:
         Developer Survey data to predict annual salaries based on:
         - Country
         - Total years of coding experience (including education)
+        - Years of professional work experience
         - Education level
         - Developer type
         - Industry
@@ -80,6 +81,15 @@ with col1:
         help="Including any education, how many years have you been coding in total?",
     )
 
+    work_exp = st.number_input(
+        "Years of Professional Work Experience",
+        min_value=0,
+        max_value=50,
+        value=5,
+        step=1,
+        help="How many years of professional work experience do you have?",
+    )
+
 with col2:
     education = st.selectbox(
         "Education Level",
@@ -116,6 +126,7 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
         input_data = SalaryInput(
             country=country,
             years_code=years,
+            work_exp=work_exp,
             education_level=education,
             dev_type=dev_type,
             industry=industry,

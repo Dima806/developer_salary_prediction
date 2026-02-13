@@ -55,7 +55,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     during training and inference, preventing data leakage and inconsistencies.
 
     Args:
-        df: DataFrame with columns: Country, YearsCode, EdLevel, DevType, Industry, Age
+        df: DataFrame with columns: Country, YearsCode, WorkExp, EdLevel, DevType, Industry, Age
             NOTE: During training, cardinality reduction should be applied to df
             BEFORE calling this function. During inference, valid_categories.yaml
             ensures only valid (already-reduced) categories are used.
@@ -67,7 +67,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
         - Fills missing values with defaults (0 for numeric, "Unknown" for categorical)
         - Normalizes Unicode apostrophes to regular apostrophes
         - Applies one-hot encoding with drop_first=True to avoid multicollinearity
-        - Column names in output will be like: YearsCode, Country_X, EdLevel_Y, DevType_Z, Industry_W, Age_V
+        - Column names in output will be like: YearsCode, WorkExp, Country_X, EdLevel_Y, DevType_Z, Industry_W, Age_V
         - Does NOT apply cardinality reduction (must be done before calling this)
     """
     # Create a copy to avoid modifying the original
@@ -85,6 +85,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # Fill missing values with defaults
     df_processed["YearsCode"] = df_processed["YearsCode"].fillna(0)
+    df_processed["WorkExp"] = df_processed["WorkExp"].fillna(0)
     df_processed["Country"] = df_processed["Country"].fillna("Unknown")
     df_processed["EdLevel"] = df_processed["EdLevel"].fillna("Unknown")
     df_processed["DevType"] = df_processed["DevType"].fillna("Unknown")
@@ -96,7 +97,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     # During inference, valid_categories.yaml ensures only valid values are used
 
     # Select only the features we need
-    feature_cols = ["Country", "YearsCode", "EdLevel", "DevType", "Industry", "Age"]
+    feature_cols = ["Country", "YearsCode", "WorkExp", "EdLevel", "DevType", "Industry", "Age"]
     df_features = df_processed[feature_cols]
 
     # Apply one-hot encoding for categorical variables

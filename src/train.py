@@ -32,7 +32,7 @@ def main():
     # Load only required columns to save memory
     df = pd.read_csv(
         data_path,
-        usecols=["Country", "YearsCode", "EdLevel", "DevType", "Industry", "Age",
+        usecols=["Country", "YearsCode", "WorkExp", "EdLevel", "DevType", "Industry", "Age",
                  "Currency", "CompTotal", "ConvertedCompYearly"],
     )
 
@@ -201,6 +201,15 @@ def main():
     print(f"  - 25th percentile: {df['YearsCode'].quantile(0.25):.1f}")
     print(f"  - 75th percentile: {df['YearsCode'].quantile(0.75):.1f}")
 
+    # Show WorkExp statistics
+    print("\n💼 Years of Professional Work Experience:")
+    print(f"  - Min: {df['WorkExp'].min():.1f}")
+    print(f"  - Max: {df['WorkExp'].max():.1f}")
+    print(f"  - Mean: {df['WorkExp'].mean():.1f}")
+    print(f"  - Median: {df['WorkExp'].median():.1f}")
+    print(f"  - 25th percentile: {df['WorkExp'].quantile(0.25):.1f}")
+    print(f"  - 75th percentile: {df['WorkExp'].quantile(0.75):.1f}")
+
     # Show most common one-hot encoded features (by frequency)
     # Separate analysis for each categorical feature
 
@@ -251,7 +260,7 @@ def main():
         print(f"  {i:2d}. {age_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
 
     print(f"\n📊 Total one-hot encoded features: {len(X.columns)}")
-    print("   - Numeric: 1 (YearsCode)")
+    print("   - Numeric: 2 (YearsCode, WorkExp)")
     print(f"   - Country: {len(country_features)}")
     print(f"   - Education: {len(edlevel_features)}")
     print(f"   - DevType: {len(devtype_features)}")

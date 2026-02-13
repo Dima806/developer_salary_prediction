@@ -111,6 +111,7 @@ def predict_salary(data: SalaryInput) -> float:
         {
             "Country": [data.country],
             "YearsCode": [data.years_code],
+            "WorkExp": [data.work_exp],
             "EdLevel": [data.education_level],
             "DevType": [data.dev_type],
             "Industry": [data.industry],

@@ -12,6 +12,7 @@ def test_years_experience_impact():
 
     base_input = {
         "country": "United States of America",
+        "work_exp": 3.0,
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
@@ -46,6 +47,7 @@ def test_country_impact():
 
     base_input = {
         "years_code": 5.0,
+        "work_exp": 3.0,
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
@@ -95,6 +97,7 @@ def test_education_impact():
     base_input = {
         "country": "United States of America",
         "years_code": 5.0,
+        "work_exp": 3.0,
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
         "age": "25-34 years old",
@@ -144,6 +147,7 @@ def test_devtype_impact():
     base_input = {
         "country": "United States of America",
         "years_code": 5.0,
+        "work_exp": 3.0,
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "industry": "Software Development",
         "age": "25-34 years old",
@@ -193,6 +197,7 @@ def test_industry_impact():
     base_input = {
         "country": "United States of America",
         "years_code": 5.0,
+        "work_exp": 3.0,
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "dev_type": "Developer, full-stack",
         "age": "25-34 years old",
@@ -242,6 +247,7 @@ def test_age_impact():
     base_input = {
         "country": "United States of America",
         "years_code": 5.0,
+        "work_exp": 3.0,
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
@@ -281,23 +287,63 @@ def test_age_impact():
         return False
 
 
+def test_work_exp_impact():
+    """Test that changing years of work experience changes prediction."""
+    print("\n" + "=" * 70)
+    print("TEST 7: Work Experience Impact")
+    print("=" * 70)
+
+    base_input = {
+        "country": "United States of America",
+        "years_code": 10.0,
+        "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+        "dev_type": "Developer, full-stack",
+        "industry": "Software Development",
+        "age": "25-34 years old",
+    }
+
+    # Test with different years of work experience
+    work_exp_tests = [0, 1, 3, 5, 10, 20]
+    predictions = []
+
+    for work_exp in work_exp_tests:
+        input_data = SalaryInput(**base_input, work_exp=work_exp)
+        salary = predict_salary(input_data)
+        predictions.append(salary)
+        print(f"  Work Exp: {work_exp:2d} -> Salary: ${salary:,.2f}")
+
+    # Check if predictions are different
+    unique_predictions = len(set(predictions))
+    if unique_predictions == len(predictions):
+        print(f"\n✅ PASS: All {len(predictions)} predictions are different")
+        return True
+    elif unique_predictions == 1:
+        print(f"\n❌ FAIL: All predictions are IDENTICAL (${predictions[0]:,.2f})")
+        print("   This indicates the model is NOT using work experience as a feature!")
+        return False
+    else:
+        print(f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions")
+        print(f"   Duplicate salaries found - possible feature issue")
+        return False
+
+
 def test_combined_features():
     """Test that combining different features produces expected variations."""
     print("\n" + "=" * 70)
-    print("TEST 7: Combined Feature Variations")
+    print("TEST 8: Combined Feature Variations")
     print("=" * 70)
 
     # Create diverse combinations (using actual values from trained model)
     test_cases = [
-        ("India", 2, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, back-end", "Software Development", "18-24 years old"),
-        ("Germany", 5, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Developer, full-stack", "Manufacturing", "25-34 years old"),
-        ("United States of America", 10, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Engineering manager", "Fintech", "35-44 years old"),
-        ("Poland", 15, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, front-end", "Healthcare", "45-54 years old"),
-        ("Brazil", 5, "Some college/university study without earning a degree", "DevOps engineer or professional", "Government", "25-34 years old"),
+        ("India", 2, 1, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, back-end", "Software Development", "18-24 years old"),
+        ("Germany", 5, 3, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Developer, full-stack", "Manufacturing", "25-34 years old"),
+        ("United States of America", 10, 8, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Engineering manager", "Fintech", "35-44 years old"),
+        ("Poland", 15, 12, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, front-end", "Healthcare", "45-54 years old"),
+        ("Brazil", 5, 3, "Some college/university study without earning a degree", "DevOps engineer or professional", "Government", "25-34 years old"),
     ]
 
     predictions = []
-    for country, years, education, devtype, industry, age in test_cases:
+    for country, years, work_exp, education, devtype, industry, age in test_cases:
         # Skip if not in valid categories
         if (country not in valid_categories["Country"]
                 or education not in valid_categories["EdLevel"]
@@ -309,6 +355,7 @@ def test_combined_features():
         input_data = SalaryInput(
             country=country,
             years_code=years,
+            work_exp=work_exp,
             education_level=education,
             dev_type=devtype,
             industry=industry,
@@ -316,7 +363,7 @@ def test_combined_features():
         )
         salary = predict_salary(input_data)
         predictions.append(salary)
-        print(f"  {country[:15]:15s} | {years:2d}y | {education[:25]:25s} | {devtype[:25]:25s} | {industry[:20]:20s} | {age[:15]:15s} -> ${salary:,.2f}")
+        print(f"  {country[:15]:15s} | {years:2d}y | {work_exp:2d}w | {education[:25]:25s} | {devtype[:25]:25s} | {industry[:20]:20s} | {age[:15]:15s} -> ${salary:,.2f}")
 
     # Check if predictions are different
     unique_predictions = len(set(predictions))
@@ -404,12 +451,13 @@ def main():
 
     # Run all tests
     results = {
-        "Years of Experience": test_years_experience_impact(),
+        "Years of Coding": test_years_experience_impact(),
         "Country": test_country_impact(),
         "Education Level": test_education_impact(),
         "Developer Type": test_devtype_impact(),
         "Industry": test_industry_impact(),
         "Age": test_age_impact(),
+        "Work Experience": test_work_exp_impact(),
         "Combined Features": test_combined_features(),
     }
 

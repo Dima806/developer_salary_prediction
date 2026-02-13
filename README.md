@@ -30,7 +30,7 @@ Download the Stack Overflow Developer Survey CSV file:
    data/survey_results_public.csv
    ```
 
-**Required columns:** `Country`, `YearsCode`, `EdLevel`, `DevType`, `Industry`, `Age`, `ConvertedCompYearly`
+**Required columns:** `Country`, `YearsCode`, `WorkExp`, `EdLevel`, `DevType`, `Industry`, `Age`, `ConvertedCompYearly`
 
 ### 3. Train the Model
 
@@ -60,6 +60,7 @@ The app will open in your browser at `http://localhost:8501`
 Launch the Streamlit app and enter:
 - **Country**: Developer's country
 - **Years of Coding (Total)**: Total years coding including education
+- **Years of Professional Work Experience**: Years of professional work experience
 - **Education Level**: Highest degree completed
 - **Developer Type**: Primary developer role
 - **Industry**: Industry the developer works in
@@ -79,6 +80,7 @@ from src.infer import predict_salary
 input_data = SalaryInput(
     country="United States of America",
     years_code=5.0,
+    work_exp=3.0,
     education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
     dev_type="Developer, full-stack",
     industry="Software Development",
@@ -119,6 +121,7 @@ from src.schema import SalaryInput
 invalid_input = SalaryInput(
     country="Japan",  # Invalid!
     years_code=5.0,
+    work_exp=3.0,
     education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
     dev_type="Developer, back-end",
     industry="Software Development",
@@ -214,7 +217,7 @@ uv run python -m src.train
 
 **Quick one-liner test:**
 ```bash
-uv run python -c "from src.schema import SalaryInput; from src.infer import predict_salary; test = SalaryInput(country='United States of America', years_code=5.0, education_level='Bachelor'\''s degree (B.A., B.S., B.Eng., etc.)', dev_type='Developer, full-stack', industry='Software Development', age='25-34 years old'); print(f'Prediction: \${predict_salary(test):,.0f}')"
+uv run python -c "from src.schema import SalaryInput; from src.infer import predict_salary; test = SalaryInput(country='United States of America', years_code=5.0, work_exp=3.0, education_level='Bachelor'\''s degree (B.A., B.S., B.Eng., etc.)', dev_type='Developer, full-stack', industry='Software Development', age='25-34 years old'); print(f'Prediction: \${predict_salary(test):,.0f}')"
 ```
 
 **Or run the full example script:**

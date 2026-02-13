@@ -18,6 +18,7 @@ def main():
     input_data_1 = SalaryInput(
         country="United States of America",
         years_code=5.0,
+        work_exp=3.0,
         education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         dev_type="Developer, full-stack",
         industry="Software Development",
@@ -26,6 +27,7 @@ def main():
 
     print(f"Country: {input_data_1.country}")
     print(f"Years of Coding (Total): {input_data_1.years_code}")
+    print(f"Work Experience: {input_data_1.work_exp}")
     print(f"Education Level: {input_data_1.education_level}")
     print(f"Developer Type: {input_data_1.dev_type}")
     print(f"Industry: {input_data_1.industry}")
@@ -41,6 +43,7 @@ def main():
     input_data_2 = SalaryInput(
         country="United States of America",
         years_code=2.0,
+        work_exp=1.0,
         education_level="Master's degree (M.A., M.S., M.Eng., MBA, etc.)",
         dev_type="Developer, front-end",
         industry="Fintech",
@@ -49,6 +52,7 @@ def main():
 
     print(f"Country: {input_data_2.country}")
     print(f"Years of Coding (Total): {input_data_2.years_code}")
+    print(f"Work Experience: {input_data_2.work_exp}")
     print(f"Education Level: {input_data_2.education_level}")
     print(f"Developer Type: {input_data_2.dev_type}")
     print(f"Industry: {input_data_2.industry}")
@@ -64,6 +68,7 @@ def main():
     input_data_3 = SalaryInput(
         country="United States of America",
         years_code=10.0,
+        work_exp=8.0,
         education_level="Master's degree (M.A., M.S., M.Eng., MBA, etc.)",
         dev_type="Engineering manager",
         industry="Banking/Financial Services",
@@ -72,6 +77,7 @@ def main():
 
     print(f"Country: {input_data_3.country}")
     print(f"Years of Coding (Total): {input_data_3.years_code}")
+    print(f"Work Experience: {input_data_3.work_exp}")
     print(f"Education Level: {input_data_3.education_level}")
     print(f"Developer Type: {input_data_3.dev_type}")
     print(f"Industry: {input_data_3.industry}")
@@ -87,6 +93,7 @@ def main():
     input_data_4 = SalaryInput(
         country="Germany",
         years_code=5.0,
+        work_exp=3.0,
         education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         dev_type="Developer, back-end",
         industry="Manufacturing",
@@ -95,6 +102,7 @@ def main():
 
     print(f"Country: {input_data_4.country}")
     print(f"Years of Coding (Total): {input_data_4.years_code}")
+    print(f"Work Experience: {input_data_4.work_exp}")
     print(f"Education Level: {input_data_4.education_level}")
     print(f"Developer Type: {input_data_4.dev_type}")
     print(f"Industry: {input_data_4.industry}")
