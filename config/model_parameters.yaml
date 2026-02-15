@@ -33,6 +33,15 @@ features:
     # Variants like "Other (please specify):" and "Other:" are normalized to this
     other_category: "Other"
 
+    # Features where rows with the "Other" category should be dropped
+    # These catch-all categories hurt model quality (low R2, high prediction error)
+    drop_other_from:
+      - Country
+      - DevType
+      - Industry
+      - Age
+      - ICorPM
+
   # One-hot encoding settings
   encoding:
     # Drop first category to avoid multicollinearity
@@ -82,6 +91,14 @@ training:
 
   # Model output path (relative to project root)
   model_path: "models/model.pkl"
+
+# Guardrail Evaluation Thresholds
+guardrails:
+  # Minimum R2 score per category (below this triggers a warning)
+  min_r2_per_category: 0.20
+
+  # Maximum absolute percentage difference between mean actual and predicted salary
+  max_abs_pct_diff: 20
 
 # Notes:
 # - All paths are relative to project root

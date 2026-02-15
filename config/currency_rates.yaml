@@ -46,10 +46,6 @@ Netherlands:
   code: EUR
   name: European Euro
   rate: 0.86
-Other:
-  code: EUR
-  name: European Euro
-  rate: 0.86
 Poland:
   code: PLN
   name: Polish zloty

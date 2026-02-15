@@ -87,6 +87,17 @@ def main():
     df["Age"] = reduce_cardinality(df["Age"])
     df["ICorPM"] = reduce_cardinality(df["ICorPM"])
 
+    # Drop rows with "Other" in specified features (low-quality catch-all categories)
+    other_name = config['features']['cardinality'].get('other_category', 'Other')
+    drop_other_from = config['features']['cardinality'].get('drop_other_from', [])
+    if drop_other_from:
+        before_drop = len(df)
+        for col in drop_other_from:
+            df = df[df[col] != other_name]
+            df_copy = df_copy[df_copy[col] != other_name]
+        print(f"Dropped {before_drop - len(df):,} rows with '{other_name}' in {drop_other_from}")
+        print(f"After dropping 'Other': {len(df):,} rows")
+
     # Now apply full feature transformations for model training
     X = prepare_features(df)
     y = df[main_label]

@@ -11,7 +11,6 @@ Country:
 - India
 - Italy
 - Netherlands
-- Other
 - Poland
 - Portugal
 - Spain
@@ -46,7 +45,6 @@ DevType:
 - Developer, game or graphics
 - Developer, mobile
 - Engineering manager
-- Other
 - Senior executive (C-suite, VP, etc.)
 - Student
 - System administrator
@@ -62,7 +60,6 @@ Industry:
 - Internet, Telecomm or Information Services
 - Manufacturing
 - Media & Advertising Services
-- Other
 - Retail and Consumer Services
 - Software Development
 - Transportation, or Supply Chain
@@ -73,8 +70,6 @@ Age:
 - 45-54 years old
 - 55-64 years old
 - 65 years or older
-- Other
 ICorPM:
 - Individual contributor
-- Other
 - People manager
