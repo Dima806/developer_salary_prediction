@@ -36,8 +36,15 @@ def load_and_preprocess(config: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.Se
     df = pd.read_csv(
         data_path,
         usecols=[
-            "Country", "YearsCode", "WorkExp", "EdLevel", "DevType",
-            "Industry", "Age", "ICorPM", "ConvertedCompYearly",
+            "Country",
+            "YearsCode",
+            "WorkExp",
+            "EdLevel",
+            "DevType",
+            "Industry",
+            "Age",
+            "ICorPM",
+            "ConvertedCompYearly",
         ],
     )
 
@@ -65,7 +72,9 @@ def load_and_preprocess(config: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.Se
         before_drop = len(df)
         for col in drop_other_from:
             df = df[df[col] != other_name]
-        print(f"Dropped {before_drop - len(df):,} rows with '{other_name}' in {drop_other_from}")
+        print(
+            f"Dropped {before_drop - len(df):,} rows with '{other_name}' in {drop_other_from}"
+        )
 
     X = prepare_features(df)
     y = df[main_label]
@@ -106,13 +115,16 @@ def run_cv_predictions(
             early_stopping_rounds=model_config["early_stopping_rounds"],
         )
         model.fit(
-            X_train, y_train,
+            X_train,
+            y_train,
             eval_set=[(X_test, y_test)],
             verbose=False,
         )
 
         test_r2 = model.score(X_test, y_test)
-        print(f"  Fold {fold}: Test R2 = {test_r2:.4f} (best iter: {model.best_iteration + 1})")
+        print(
+            f"  Fold {fold}: Test R2 = {test_r2:.4f} (best iter: {model.best_iteration + 1})"
+        )
 
         oof_predictions[test_idx] = model.predict(X_test)
 
@@ -148,14 +160,16 @@ def compute_category_metrics(
         mean_pred = cat_pred.mean()
         abs_pct_diff = abs(mean_pred - mean_actual) / mean_actual * 100
 
-        results.append({
-            "Category": cat,
-            "Count": count,
-            "R2": cat_r2,
-            "Mean Actual ($)": mean_actual,
-            "Mean Predicted ($)": mean_pred,
-            "Abs % Diff": abs_pct_diff,
-        })
+        results.append(
+            {
+                "Category": cat,
+                "Count": count,
+                "R2": cat_r2,
+                "Mean Actual ($)": mean_actual,
+                "Mean Predicted ($)": mean_pred,
+                "Abs % Diff": abs_pct_diff,
+            }
+        )
 
     return pd.DataFrame(results)
 
@@ -163,8 +177,12 @@ def compute_category_metrics(
 def format_table(metrics_df: pd.DataFrame) -> str:
     """Format metrics DataFrame as a markdown table."""
     lines = []
-    header = "| Category | Count | R2 | Mean Actual ($) | Mean Predicted ($) | Abs % Diff |"
-    sep = "|----------|------:|----:|----------------:|-------------------:|-----------:|"
+    header = (
+        "| Category | Count | R2 | Mean Actual ($) | Mean Predicted ($) | Abs % Diff |"
+    )
+    sep = (
+        "|----------|------:|----:|----------------:|-------------------:|-----------:|"
+    )
     lines.append(header)
     lines.append(sep)
 

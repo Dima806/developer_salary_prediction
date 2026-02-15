@@ -12,7 +12,7 @@ with open(_config_path, "r") as f:
 
 def _get_other_category() -> str:
     """Get the standard 'Other' category name from config."""
-    return _config['features']['cardinality'].get('other_category', 'Other')
+    return _config["features"]["cardinality"].get("other_category", "Other")
 
 
 def normalize_other_categories(series: pd.Series) -> pd.Series:
@@ -24,16 +24,14 @@ def normalize_other_categories(series: pd.Series) -> pd.Series:
     """
     other_name = _get_other_category()
     return series.replace(
-        to_replace=r'^Other\b.*$',
+        to_replace=r"^Other\b.*$",
         value=other_name,
         regex=True,
     )
 
 
 def reduce_cardinality(
-    series: pd.Series,
-    max_categories: int = None,
-    min_frequency: int = None
+    series: pd.Series, max_categories: int = None, min_frequency: int = None
 ) -> pd.Series:
     """
     Reduce cardinality by grouping rare categories into 'Other'.
@@ -52,9 +50,9 @@ def reduce_cardinality(
 
     # Use config defaults if not provided
     if max_categories is None:
-        max_categories = _config['features']['cardinality']['max_categories']
+        max_categories = _config["features"]["cardinality"]["max_categories"]
     if min_frequency is None:
-        min_frequency = _config['features']['cardinality']['min_frequency']
+        min_frequency = _config["features"]["cardinality"]["min_frequency"]
 
     # Normalize "Other" variants before counting frequencies
     series = normalize_other_categories(series)
@@ -102,7 +100,9 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     # This handles cases where data has \u2019 (') instead of '
     for col in ["Country", "EdLevel", "DevType", "Industry", "Age", "ICorPM"]:
         if col in df_processed.columns:
-            df_processed[col] = df_processed[col].str.replace('\u2019', "'", regex=False)
+            df_processed[col] = df_processed[col].str.replace(
+                "\u2019", "'", regex=False
+            )
 
     # Normalize "Other" category variants (e.g. "Other (please specify):" -> "Other")
     for col in ["Country", "EdLevel", "DevType", "Industry", "Age", "ICorPM"]:
@@ -110,7 +110,10 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
             df_processed[col] = normalize_other_categories(df_processed[col])
 
     # Handle legacy column name (YearsCodePro -> YearsCode)
-    if "YearsCodePro" in df_processed.columns and "YearsCode" not in df_processed.columns:
+    if (
+        "YearsCodePro" in df_processed.columns
+        and "YearsCode" not in df_processed.columns
+    ):
         df_processed.rename(columns={"YearsCodePro": "YearsCode"}, inplace=True)
 
     # Fill missing values with defaults
@@ -128,7 +131,16 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     # During inference, valid_categories.yaml ensures only valid values are used
 
     # Select only the features we need
-    feature_cols = ["Country", "YearsCode", "WorkExp", "EdLevel", "DevType", "Industry", "Age", "ICorPM"]
+    feature_cols = [
+        "Country",
+        "YearsCode",
+        "WorkExp",
+        "EdLevel",
+        "DevType",
+        "Industry",
+        "Age",
+        "ICorPM",
+    ]
     df_features = df_processed[feature_cols]
 
     # Apply one-hot encoding for categorical variables
@@ -136,7 +148,9 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     # The reindex in infer.py will align with training columns
     # For training (many rows), we use the config value
     is_inference = len(df_features) == 1
-    drop_first = False if is_inference else _config['features']['encoding']['drop_first']
+    drop_first = (
+        False if is_inference else _config["features"]["encoding"]["drop_first"]
+    )
     df_encoded = pd.get_dummies(df_features, drop_first=drop_first)
 
     return df_encoded

@@ -36,7 +36,9 @@ def test_years_experience_impact():
         print(f"\n✅ PASS: All {len(predictions)} predictions are different")
         return True
     else:
-        print(f"\n❌ FAIL: Only {unique_predictions}/{len(predictions)} unique predictions")
+        print(
+            f"\n❌ FAIL: Only {unique_predictions}/{len(predictions)} unique predictions"
+        )
         return False
 
 
@@ -62,7 +64,7 @@ def test_country_impact():
         "Germany",
         "India",
         "Brazil",
-        "Poland"
+        "Poland",
     ]
 
     # Filter to only countries that exist in valid categories
@@ -85,8 +87,10 @@ def test_country_impact():
         print("   This indicates the model is NOT using country as a feature!")
         return False
     else:
-        print(f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions")
-        print(f"   Duplicate salaries found - possible feature issue")
+        print(
+            f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions"
+        )
+        print("   Duplicate salaries found - possible feature issue")
         return False
 
 
@@ -136,8 +140,10 @@ def test_education_impact():
         print("   This indicates the model is NOT using education level as a feature!")
         return False
     else:
-        print(f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions")
-        print(f"   Duplicate salaries found - possible feature issue")
+        print(
+            f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions"
+        )
+        print("   Duplicate salaries found - possible feature issue")
         return False
 
 
@@ -187,8 +193,10 @@ def test_devtype_impact():
         print("   This indicates the model is NOT using developer type as a feature!")
         return False
     else:
-        print(f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions")
-        print(f"   Duplicate salaries found - possible feature issue")
+        print(
+            f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions"
+        )
+        print("   Duplicate salaries found - possible feature issue")
         return False
 
 
@@ -238,8 +246,10 @@ def test_industry_impact():
         print("   This indicates the model is NOT using industry as a feature!")
         return False
     else:
-        print(f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions")
-        print(f"   Duplicate salaries found - possible feature issue")
+        print(
+            f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions"
+        )
+        print("   Duplicate salaries found - possible feature issue")
         return False
 
 
@@ -288,8 +298,10 @@ def test_age_impact():
         print("   This indicates the model is NOT using age as a feature!")
         return False
     else:
-        print(f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions")
-        print(f"   Duplicate salaries found - possible feature issue")
+        print(
+            f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions"
+        )
+        print("   Duplicate salaries found - possible feature issue")
         return False
 
 
@@ -329,8 +341,10 @@ def test_work_exp_impact():
         print("   This indicates the model is NOT using work experience as a feature!")
         return False
     else:
-        print(f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions")
-        print(f"   Duplicate salaries found - possible feature issue")
+        print(
+            f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions"
+        )
+        print("   Duplicate salaries found - possible feature issue")
         return False
 
 
@@ -376,8 +390,10 @@ def test_icorpm_impact():
         print("   This indicates the model is NOT using IC/PM as a feature!")
         return False
     else:
-        print(f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions")
-        print(f"   Duplicate salaries found - possible feature issue")
+        print(
+            f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions"
+        )
+        print("   Duplicate salaries found - possible feature issue")
         return False
 
 
@@ -389,22 +405,78 @@ def test_combined_features():
 
     # Create diverse combinations (using actual values from trained model)
     test_cases = [
-        ("India", 2, 1, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, back-end", "Software Development", "18-24 years old", "Individual contributor"),
-        ("Germany", 5, 3, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Developer, full-stack", "Manufacturing", "25-34 years old", "Individual contributor"),
-        ("United States of America", 10, 8, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Engineering manager", "Fintech", "35-44 years old", "People manager"),
-        ("Poland", 15, 12, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, front-end", "Healthcare", "45-54 years old", "Individual contributor"),
-        ("Brazil", 5, 3, "Some college/university study without earning a degree", "DevOps engineer or professional", "Government", "25-34 years old", "Individual contributor"),
+        (
+            "India",
+            2,
+            1,
+            "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+            "Developer, back-end",
+            "Software Development",
+            "18-24 years old",
+            "Individual contributor",
+        ),
+        (
+            "Germany",
+            5,
+            3,
+            "Master's degree (M.A., M.S., M.Eng., MBA, etc.)",
+            "Developer, full-stack",
+            "Manufacturing",
+            "25-34 years old",
+            "Individual contributor",
+        ),
+        (
+            "United States of America",
+            10,
+            8,
+            "Master's degree (M.A., M.S., M.Eng., MBA, etc.)",
+            "Engineering manager",
+            "Fintech",
+            "35-44 years old",
+            "People manager",
+        ),
+        (
+            "Poland",
+            15,
+            12,
+            "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+            "Developer, front-end",
+            "Healthcare",
+            "45-54 years old",
+            "Individual contributor",
+        ),
+        (
+            "Brazil",
+            5,
+            3,
+            "Some college/university study without earning a degree",
+            "DevOps engineer or professional",
+            "Government",
+            "25-34 years old",
+            "Individual contributor",
+        ),
     ]
 
     predictions = []
-    for country, years, work_exp, education, devtype, industry, age, icorpm in test_cases:
+    for (
+        country,
+        years,
+        work_exp,
+        education,
+        devtype,
+        industry,
+        age,
+        icorpm,
+    ) in test_cases:
         # Skip if not in valid categories
-        if (country not in valid_categories["Country"]
-                or education not in valid_categories["EdLevel"]
-                or devtype not in valid_categories["DevType"]
-                or industry not in valid_categories["Industry"]
-                or age not in valid_categories["Age"]
-                or icorpm not in valid_categories["ICorPM"]):
+        if (
+            country not in valid_categories["Country"]
+            or education not in valid_categories["EdLevel"]
+            or devtype not in valid_categories["DevType"]
+            or industry not in valid_categories["Industry"]
+            or age not in valid_categories["Age"]
+            or icorpm not in valid_categories["ICorPM"]
+        ):
             continue
 
         input_data = SalaryInput(
@@ -419,7 +491,9 @@ def test_combined_features():
         )
         salary = predict_salary(input_data)
         predictions.append(salary)
-        print(f"  {country[:15]:15s} | {years:2d}y | {work_exp:2d}w | {education[:25]:25s} | {devtype[:25]:25s} | {industry[:20]:20s} | {age[:15]:15s} | {icorpm[:5]:5s} -> ${salary:,.2f}")
+        print(
+            f"  {country[:15]:15s} | {years:2d}y | {work_exp:2d}w | {education[:25]:25s} | {devtype[:25]:25s} | {industry[:20]:20s} | {age[:15]:15s} | {icorpm[:5]:5s} -> ${salary:,.2f}"
+        )
 
     # Check if predictions are different
     unique_predictions = len(set(predictions))
@@ -428,7 +502,7 @@ def test_combined_features():
         return True
     else:
         print(f"\n⚠️  Only {unique_predictions}/{len(predictions)} unique predictions")
-        print(f"   Some combinations produce identical salaries")
+        print("   Some combinations produce identical salaries")
         return False
 
 
@@ -443,13 +517,19 @@ def print_feature_analysis():
     print(f"\nTotal features in model: {len(feature_columns)}")
 
     # Count by type
-    country_features = [f for f in feature_columns if f.startswith('Country_')]
-    edlevel_features = [f for f in feature_columns if f.startswith('EdLevel_')]
-    devtype_features = [f for f in feature_columns if f.startswith('DevType_')]
-    industry_features = [f for f in feature_columns if f.startswith('Industry_')]
-    age_features = [f for f in feature_columns if f.startswith('Age_')]
-    icorpm_features = [f for f in feature_columns if f.startswith('ICorPM_')]
-    numeric_features = [f for f in feature_columns if not f.startswith(('Country_', 'EdLevel_', 'DevType_', 'Industry_', 'Age_', 'ICorPM_'))]
+    country_features = [f for f in feature_columns if f.startswith("Country_")]
+    edlevel_features = [f for f in feature_columns if f.startswith("EdLevel_")]
+    devtype_features = [f for f in feature_columns if f.startswith("DevType_")]
+    industry_features = [f for f in feature_columns if f.startswith("Industry_")]
+    age_features = [f for f in feature_columns if f.startswith("Age_")]
+    icorpm_features = [f for f in feature_columns if f.startswith("ICorPM_")]
+    numeric_features = [
+        f
+        for f in feature_columns
+        if not f.startswith(
+            ("Country_", "EdLevel_", "DevType_", "Industry_", "Age_", "ICorPM_")
+        )
+    ]
 
     print(f"  - Numeric features: {len(numeric_features)} -> {numeric_features}")
     print(f"  - Country features: {len(country_features)}")
@@ -460,32 +540,32 @@ def print_feature_analysis():
     print(f"  - ICorPM features: {len(icorpm_features)}")
 
     if len(country_features) > 0:
-        print(f"\nSample country features:")
+        print("\nSample country features:")
         for feat in country_features[:5]:
             print(f"    - {feat}")
 
     if len(edlevel_features) > 0:
-        print(f"\nSample education features:")
+        print("\nSample education features:")
         for feat in edlevel_features[:5]:
             print(f"    - {feat}")
 
     if len(devtype_features) > 0:
-        print(f"\nSample developer type features:")
+        print("\nSample developer type features:")
         for feat in devtype_features[:5]:
             print(f"    - {feat}")
 
     if len(industry_features) > 0:
-        print(f"\nSample industry features:")
+        print("\nSample industry features:")
         for feat in industry_features[:5]:
             print(f"    - {feat}")
 
     if len(age_features) > 0:
-        print(f"\nSample age features:")
+        print("\nSample age features:")
         for feat in age_features[:5]:
             print(f"    - {feat}")
 
     if len(icorpm_features) > 0:
-        print(f"\nSample IC/PM features:")
+        print("\nSample IC/PM features:")
         for feat in icorpm_features[:5]:
             print(f"    - {feat}")
 
@@ -544,8 +624,12 @@ def main():
     if passed_count == total_count:
         print("\n🎉 All tests passed! The model is using all features correctly.")
     else:
-        print("\n⚠️  Some tests failed. The model may not be using all features properly.")
-        print("   This indicates potential training-testing skew or feature engineering issues.")
+        print(
+            "\n⚠️  Some tests failed. The model may not be using all features properly."
+        )
+        print(
+            "   This indicates potential training-testing skew or feature engineering issues."
+        )
 
 
 if __name__ == "__main__":

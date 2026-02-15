@@ -25,15 +25,28 @@ def main():
 
     if not data_path.exists():
         print(f"Error: Data file not found at {data_path}")
-        print("Please download the Stack Overflow Developer Survey CSV and place it in the data/ directory.")
+        print(
+            "Please download the Stack Overflow Developer Survey CSV and place it in the data/ directory."
+        )
         print("Download from: https://insights.stackoverflow.com/survey")
         return
 
     # Load only required columns to save memory
     df = pd.read_csv(
         data_path,
-        usecols=["Country", "YearsCode", "WorkExp", "EdLevel", "DevType", "Industry", "Age", "ICorPM",
-                 "Currency", "CompTotal", "ConvertedCompYearly"],
+        usecols=[
+            "Country",
+            "YearsCode",
+            "WorkExp",
+            "EdLevel",
+            "DevType",
+            "Industry",
+            "Age",
+            "ICorPM",
+            "Currency",
+            "CompTotal",
+            "ConvertedCompYearly",
+        ],
     )
 
     print(f"Loaded {len(df):,} rows")
@@ -42,13 +55,13 @@ def main():
     # select main label
     main_label = "ConvertedCompYearly"
     # select records with main label more than min_salary threshold
-    min_salary = config['data']['min_salary']
+    min_salary = config["data"]["min_salary"]
     df = df[df[main_label] > min_salary]
     # Exclude outliers based on percentile bounds PER COUNTRY
     # This preserves records from lower-paid and higher-paid countries
     # that would otherwise be removed by global percentile filtering
-    lower_pct = config['data']['lower_percentile'] / 100
-    upper_pct = config['data']['upper_percentile'] / 100
+    lower_pct = config["data"]["lower_percentile"] / 100
+    upper_pct = config["data"]["upper_percentile"] / 100
     lower_bound = df.groupby("Country")[main_label].transform("quantile", lower_pct)
     upper_bound = df.groupby("Country")[main_label].transform("quantile", upper_pct)
     df = df[(df[main_label] > lower_bound) & (df[main_label] < upper_bound)]
@@ -63,12 +76,12 @@ def main():
     df_copy = df.copy()
 
     # Normalize Unicode apostrophes to regular apostrophes for consistency
-    df_copy["Country"] = df_copy["Country"].str.replace('\u2019', "'", regex=False)
-    df_copy["EdLevel"] = df_copy["EdLevel"].str.replace('\u2019', "'", regex=False)
-    df_copy["DevType"] = df_copy["DevType"].str.replace('\u2019', "'", regex=False)
-    df_copy["Industry"] = df_copy["Industry"].str.replace('\u2019', "'", regex=False)
-    df_copy["Age"] = df_copy["Age"].str.replace('\u2019', "'", regex=False)
-    df_copy["ICorPM"] = df_copy["ICorPM"].str.replace('\u2019', "'", regex=False)
+    df_copy["Country"] = df_copy["Country"].str.replace("\u2019", "'", regex=False)
+    df_copy["EdLevel"] = df_copy["EdLevel"].str.replace("\u2019", "'", regex=False)
+    df_copy["DevType"] = df_copy["DevType"].str.replace("\u2019", "'", regex=False)
+    df_copy["Industry"] = df_copy["Industry"].str.replace("\u2019", "'", regex=False)
+    df_copy["Age"] = df_copy["Age"].str.replace("\u2019", "'", regex=False)
+    df_copy["ICorPM"] = df_copy["ICorPM"].str.replace("\u2019", "'", regex=False)
 
     # Apply cardinality reduction
     df_copy["Country"] = reduce_cardinality(df_copy["Country"])
@@ -88,14 +101,16 @@ def main():
     df["ICorPM"] = reduce_cardinality(df["ICorPM"])
 
     # Drop rows with "Other" in specified features (low-quality catch-all categories)
-    other_name = config['features']['cardinality'].get('other_category', 'Other')
-    drop_other_from = config['features']['cardinality'].get('drop_other_from', [])
+    other_name = config["features"]["cardinality"].get("other_category", "Other")
+    drop_other_from = config["features"]["cardinality"].get("drop_other_from", [])
     if drop_other_from:
         before_drop = len(df)
         for col in drop_other_from:
             df = df[df[col] != other_name]
             df_copy = df_copy[df_copy[col] != other_name]
-        print(f"Dropped {before_drop - len(df):,} rows with '{other_name}' in {drop_other_from}")
+        print(
+            f"Dropped {before_drop - len(df):,} rows with '{other_name}' in {drop_other_from}"
+        )
         print(f"After dropping 'Other': {len(df):,} rows")
 
     # Now apply full feature transformations for model training
@@ -124,7 +139,9 @@ def main():
     with open(valid_categories_path, "w") as f:
         yaml.dump(valid_categories, f, default_flow_style=False, sort_keys=False)
 
-    print(f"\nSaved {len(valid_categories['Country'])} valid countries, {len(valid_categories['EdLevel'])} valid education levels, {len(valid_categories['DevType'])} valid developer types, {len(valid_categories['Industry'])} valid industries, {len(valid_categories['Age'])} valid age ranges, and {len(valid_categories['ICorPM'])} valid IC/PM values to {valid_categories_path}")
+    print(
+        f"\nSaved {len(valid_categories['Country'])} valid countries, {len(valid_categories['EdLevel'])} valid education levels, {len(valid_categories['DevType'])} valid developer types, {len(valid_categories['Industry'])} valid industries, {len(valid_categories['Age'])} valid age ranges, and {len(valid_categories['ICorPM'])} valid IC/PM values to {valid_categories_path}"
+    )
 
     # Compute currency conversion rates per country
     # Use the original data with Currency and CompTotal columns
@@ -137,7 +154,9 @@ def main():
     # Compute conversion rate: local currency / USD
     currency_df["rate"] = currency_df["CompTotal"] / currency_df[main_label]
     # Filter out unreasonable rates (negative, zero, or extreme)
-    currency_df = currency_df[(currency_df["rate"] > 0.001) & (currency_df["rate"] < 100000)]
+    currency_df = currency_df[
+        (currency_df["rate"] > 0.001) & (currency_df["rate"] < 100000)
+    ]
 
     currency_rates = {}
     for country in valid_categories["Country"]:
@@ -163,12 +182,21 @@ def main():
 
     currency_rates_path = Path("config/currency_rates.yaml")
     with open(currency_rates_path, "w") as f:
-        yaml.dump(currency_rates, f, default_flow_style=False, sort_keys=True,
-                  allow_unicode=True)
+        yaml.dump(
+            currency_rates,
+            f,
+            default_flow_style=False,
+            sort_keys=True,
+            allow_unicode=True,
+        )
 
-    print(f"Saved currency rates for {len(currency_rates)} countries to {currency_rates_path}")
+    print(
+        f"Saved currency rates for {len(currency_rates)} countries to {currency_rates_path}"
+    )
     for country, info in sorted(currency_rates.items()):
-        print(f"  {country:45s} -> {info['code']} ({info['name']}, rate: {info['rate']})")
+        print(
+            f"  {country:45s} -> {info['code']} ({info['name']}, rate: {info['rate']})"
+        )
 
     print(f"\nFeature matrix shape: {X.shape}")
     print(f"Total features: {X.shape[1]}")
@@ -182,37 +210,37 @@ def main():
     print("\n📍 Top 10 Countries:")
     top_countries = df["Country"].value_counts().head(10)
     for country, count in top_countries.items():
-        print(f"  - {country}: {count:,} ({count/len(df)*100:.1f}%)")
+        print(f"  - {country}: {count:,} ({count / len(df) * 100:.1f}%)")
 
     # Show top education levels
     print("\n🎓 Top Education Levels:")
     top_edu = df["EdLevel"].value_counts().head(10)
     for edu, count in top_edu.items():
-        print(f"  - {edu}: {count:,} ({count/len(df)*100:.1f}%)")
+        print(f"  - {edu}: {count:,} ({count / len(df) * 100:.1f}%)")
 
     # Show top developer types
     print("\n👨‍💻 Top Developer Types:")
     top_devtype = df["DevType"].value_counts().head(10)
     for devtype, count in top_devtype.items():
-        print(f"  - {devtype}: {count:,} ({count/len(df)*100:.1f}%)")
+        print(f"  - {devtype}: {count:,} ({count / len(df) * 100:.1f}%)")
 
     # Show top industries
     print("\n🏢 Top Industries:")
     top_industry = df["Industry"].value_counts().head(10)
     for industry, count in top_industry.items():
-        print(f"  - {industry}: {count:,} ({count/len(df)*100:.1f}%)")
+        print(f"  - {industry}: {count:,} ({count / len(df) * 100:.1f}%)")
 
     # Show age distribution
     print("\n🎂 Age Distribution:")
     top_age = df["Age"].value_counts().head(10)
     for age, count in top_age.items():
-        print(f"  - {age}: {count:,} ({count/len(df)*100:.1f}%)")
+        print(f"  - {age}: {count:,} ({count / len(df) * 100:.1f}%)")
 
     # Show IC or PM distribution
     print("\n👥 IC or PM Distribution:")
     top_icorpm = df["ICorPM"].value_counts().head(10)
     for icorpm, count in top_icorpm.items():
-        print(f"  - {icorpm}: {count:,} ({count/len(df)*100:.1f}%)")
+        print(f"  - {icorpm}: {count:,} ({count / len(df) * 100:.1f}%)")
 
     # Show YearsCode statistics
     print("\n💼 Years of Coding Experience:")
@@ -239,55 +267,81 @@ def main():
     feature_counts = X.sum().sort_values(ascending=False)
 
     # Exclude numeric features (YearsCode)
-    categorical_features = feature_counts[~feature_counts.index.str.startswith('YearsCode')]
+    categorical_features = feature_counts[
+        ~feature_counts.index.str.startswith("YearsCode")
+    ]
 
     # Country features
     print("\n🌍 Top 15 Country Features (most common):")
-    country_features = categorical_features[categorical_features.index.str.startswith('Country_')]
+    country_features = categorical_features[
+        categorical_features.index.str.startswith("Country_")
+    ]
     for i, (feature, count) in enumerate(country_features.head(15).items(), 1):
         percentage = (count / len(X)) * 100
-        country_name = feature.replace('Country_', '')
-        print(f"  {i:2d}. {country_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
+        country_name = feature.replace("Country_", "")
+        print(
+            f"  {i:2d}. {country_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)"
+        )
 
     # Education level features
     print("\n🎓 Top 10 Education Level Features (most common):")
-    edlevel_features = categorical_features[categorical_features.index.str.startswith('EdLevel_')]
+    edlevel_features = categorical_features[
+        categorical_features.index.str.startswith("EdLevel_")
+    ]
     for i, (feature, count) in enumerate(edlevel_features.head(10).items(), 1):
         percentage = (count / len(X)) * 100
-        edu_name = feature.replace('EdLevel_', '')
-        print(f"  {i:2d}. {edu_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
+        edu_name = feature.replace("EdLevel_", "")
+        print(
+            f"  {i:2d}. {edu_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)"
+        )
 
     # Developer type features
     print("\n👨‍💻 Top 10 Developer Type Features (most common):")
-    devtype_features = categorical_features[categorical_features.index.str.startswith('DevType_')]
+    devtype_features = categorical_features[
+        categorical_features.index.str.startswith("DevType_")
+    ]
     for i, (feature, count) in enumerate(devtype_features.head(10).items(), 1):
         percentage = (count / len(X)) * 100
-        devtype_name = feature.replace('DevType_', '')
-        print(f"  {i:2d}. {devtype_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
+        devtype_name = feature.replace("DevType_", "")
+        print(
+            f"  {i:2d}. {devtype_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)"
+        )
 
     # Industry features
     print("\n🏢 Top 10 Industry Features (most common):")
-    industry_features = categorical_features[categorical_features.index.str.startswith('Industry_')]
+    industry_features = categorical_features[
+        categorical_features.index.str.startswith("Industry_")
+    ]
     for i, (feature, count) in enumerate(industry_features.head(10).items(), 1):
         percentage = (count / len(X)) * 100
-        industry_name = feature.replace('Industry_', '')
-        print(f"  {i:2d}. {industry_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
+        industry_name = feature.replace("Industry_", "")
+        print(
+            f"  {i:2d}. {industry_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)"
+        )
 
     # Age features
     print("\n🎂 Top 10 Age Features (most common):")
-    age_features = categorical_features[categorical_features.index.str.startswith('Age_')]
+    age_features = categorical_features[
+        categorical_features.index.str.startswith("Age_")
+    ]
     for i, (feature, count) in enumerate(age_features.head(10).items(), 1):
         percentage = (count / len(X)) * 100
-        age_name = feature.replace('Age_', '')
-        print(f"  {i:2d}. {age_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
+        age_name = feature.replace("Age_", "")
+        print(
+            f"  {i:2d}. {age_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)"
+        )
 
     # ICorPM features
     print("\n👥 Top 10 IC/PM Features (most common):")
-    icorpm_features = categorical_features[categorical_features.index.str.startswith('ICorPM_')]
+    icorpm_features = categorical_features[
+        categorical_features.index.str.startswith("ICorPM_")
+    ]
     for i, (feature, count) in enumerate(icorpm_features.head(10).items(), 1):
         percentage = (count / len(X)) * 100
-        icorpm_name = feature.replace('ICorPM_', '')
-        print(f"  {i:2d}. {icorpm_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
+        icorpm_name = feature.replace("ICorPM_", "")
+        print(
+            f"  {i:2d}. {icorpm_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)"
+        )
 
     print(f"\n📊 Total one-hot encoded features: {len(X.columns)}")
     print("   - Numeric: 2 (YearsCode, WorkExp)")
@@ -301,9 +355,9 @@ def main():
     print("=" * 60 + "\n")
 
     # Cross-validation for robust evaluation
-    n_splits = config['data'].get('cv_splits', 5)
-    random_state = config['data']['random_state']
-    model_config = config['model']
+    n_splits = config["data"].get("cv_splits", 5)
+    random_state = config["data"]["random_state"]
+    model_config = config["model"]
 
     print(f"Running {n_splits}-fold cross-validation...")
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
@@ -317,16 +371,17 @@ def main():
         y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
         model = XGBRegressor(
-            n_estimators=model_config['n_estimators'],
-            learning_rate=model_config['learning_rate'],
-            max_depth=model_config['max_depth'],
-            min_child_weight=model_config['min_child_weight'],
-            random_state=model_config['random_state'],
-            n_jobs=model_config['n_jobs'],
-            early_stopping_rounds=model_config['early_stopping_rounds'],
+            n_estimators=model_config["n_estimators"],
+            learning_rate=model_config["learning_rate"],
+            max_depth=model_config["max_depth"],
+            min_child_weight=model_config["min_child_weight"],
+            random_state=model_config["random_state"],
+            n_jobs=model_config["n_jobs"],
+            early_stopping_rounds=model_config["early_stopping_rounds"],
         )
         model.fit(
-            X_train, y_train,
+            X_train,
+            y_train,
             eval_set=[(X_test, y_test)],
             verbose=False,
         )
@@ -336,7 +391,9 @@ def main():
         train_scores.append(train_r2)
         test_scores.append(test_r2)
         best_iterations.append(model.best_iteration + 1)
-        print(f"  Fold {fold}: Train R2 = {train_r2:.4f}, Test R2 = {test_r2:.4f} (best iter: {model.best_iteration + 1})")
+        print(
+            f"  Fold {fold}: Train R2 = {train_r2:.4f}, Test R2 = {test_r2:.4f} (best iter: {model.best_iteration + 1})"
+        )
 
     avg_train = np.mean(train_scores)
     avg_test = np.mean(test_scores)
@@ -354,23 +411,24 @@ def main():
     )
 
     final_model = XGBRegressor(
-        n_estimators=model_config['n_estimators'],
-        learning_rate=model_config['learning_rate'],
-        max_depth=model_config['max_depth'],
-        min_child_weight=model_config['min_child_weight'],
-        random_state=model_config['random_state'],
-        n_jobs=model_config['n_jobs'],
-        early_stopping_rounds=model_config['early_stopping_rounds'],
+        n_estimators=model_config["n_estimators"],
+        learning_rate=model_config["learning_rate"],
+        max_depth=model_config["max_depth"],
+        min_child_weight=model_config["min_child_weight"],
+        random_state=model_config["random_state"],
+        n_jobs=model_config["n_jobs"],
+        early_stopping_rounds=model_config["early_stopping_rounds"],
     )
     final_model.fit(
-        X_train_final, y_train_final,
+        X_train_final,
+        y_train_final,
         eval_set=[(X_es, y_es)],
-        verbose=config['training']['verbose'],
+        verbose=config["training"]["verbose"],
     )
     print(f"Final model best iteration: {final_model.best_iteration + 1}")
 
     # Save model and feature columns for inference
-    model_path = Path(config['training']['model_path'])
+    model_path = Path(config["training"]["model_path"])
     model_path.parent.mkdir(parents=True, exist_ok=True)
 
     artifacts = {

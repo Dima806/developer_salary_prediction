@@ -61,12 +61,32 @@ valid_ages = valid_categories["Age"]
 valid_icorpm = valid_categories["ICorPM"]
 
 # Set default values (if available)
-default_country = "United States of America" if "United States of America" in valid_countries else valid_countries[0]
-default_education = "Bachelor's degree (B.A., B.S., B.Eng., etc.)" if "Bachelor's degree (B.A., B.S., B.Eng., etc.)" in valid_education_levels else valid_education_levels[0]
-default_dev_type = "Developer, back-end" if "Developer, back-end" in valid_dev_types else valid_dev_types[0]
-default_industry = "Software Development" if "Software Development" in valid_industries else valid_industries[0]
+default_country = (
+    "United States of America"
+    if "United States of America" in valid_countries
+    else valid_countries[0]
+)
+default_education = (
+    "Bachelor's degree (B.A., B.S., B.Eng., etc.)"
+    if "Bachelor's degree (B.A., B.S., B.Eng., etc.)" in valid_education_levels
+    else valid_education_levels[0]
+)
+default_dev_type = (
+    "Developer, back-end"
+    if "Developer, back-end" in valid_dev_types
+    else valid_dev_types[0]
+)
+default_industry = (
+    "Software Development"
+    if "Software Development" in valid_industries
+    else valid_industries[0]
+)
 default_age = "25-34 years old" if "25-34 years old" in valid_ages else valid_ages[0]
-default_icorpm = "Individual contributor" if "Individual contributor" in valid_icorpm else valid_icorpm[0]
+default_icorpm = (
+    "Individual contributor"
+    if "Individual contributor" in valid_icorpm
+    else valid_icorpm[0]
+)
 
 with col1:
     country = st.selectbox(

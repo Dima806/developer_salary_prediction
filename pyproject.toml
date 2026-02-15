@@ -12,4 +12,20 @@ dependencies = [
     "xgboost>=3.1.0",
     "ruff>=0.15.0",
     "pyyaml>=6.0.0",
+    "numpy>=2.4.2",
+    "radon>=6.0.1",
+    "pip-audit>=2.10.0",
+    "bandit>=1.9.3",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+    "radon>=6.0.0",
+    "pip-audit>=2.7.0",
+    "bandit>=1.8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
