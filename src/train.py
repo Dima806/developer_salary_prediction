@@ -32,7 +32,7 @@ def main():
     # Load only required columns to save memory
     df = pd.read_csv(
         data_path,
-        usecols=["Country", "YearsCode", "WorkExp", "EdLevel", "DevType", "Industry", "Age",
+        usecols=["Country", "YearsCode", "WorkExp", "EdLevel", "DevType", "Industry", "Age", "ICorPM",
                  "Currency", "CompTotal", "ConvertedCompYearly"],
     )
 
@@ -68,6 +68,7 @@ def main():
     df_copy["DevType"] = df_copy["DevType"].str.replace('\u2019', "'", regex=False)
     df_copy["Industry"] = df_copy["Industry"].str.replace('\u2019', "'", regex=False)
     df_copy["Age"] = df_copy["Age"].str.replace('\u2019', "'", regex=False)
+    df_copy["ICorPM"] = df_copy["ICorPM"].str.replace('\u2019', "'", regex=False)
 
     # Apply cardinality reduction
     df_copy["Country"] = reduce_cardinality(df_copy["Country"])
@@ -75,6 +76,7 @@ def main():
     df_copy["DevType"] = reduce_cardinality(df_copy["DevType"])
     df_copy["Industry"] = reduce_cardinality(df_copy["Industry"])
     df_copy["Age"] = reduce_cardinality(df_copy["Age"])
+    df_copy["ICorPM"] = reduce_cardinality(df_copy["ICorPM"])
 
     # Apply cardinality reduction to the actual training data as well
     # (prepare_features no longer does this internally)
@@ -83,6 +85,7 @@ def main():
     df["DevType"] = reduce_cardinality(df["DevType"])
     df["Industry"] = reduce_cardinality(df["Industry"])
     df["Age"] = reduce_cardinality(df["Age"])
+    df["ICorPM"] = reduce_cardinality(df["ICorPM"])
 
     # Now apply full feature transformations for model training
     X = prepare_features(df)
@@ -95,6 +98,7 @@ def main():
     devtype_values = df_copy["DevType"].dropna().unique().tolist()
     industry_values = df_copy["Industry"].dropna().unique().tolist()
     age_values = df_copy["Age"].dropna().unique().tolist()
+    icorpm_values = df_copy["ICorPM"].dropna().unique().tolist()
 
     valid_categories = {
         "Country": sorted(country_values),
@@ -102,13 +106,14 @@ def main():
         "DevType": sorted(devtype_values),
         "Industry": sorted(industry_values),
         "Age": sorted(age_values),
+        "ICorPM": sorted(icorpm_values),
     }
 
     valid_categories_path = Path("config/valid_categories.yaml")
     with open(valid_categories_path, "w") as f:
         yaml.dump(valid_categories, f, default_flow_style=False, sort_keys=False)
 
-    print(f"\nSaved {len(valid_categories['Country'])} valid countries, {len(valid_categories['EdLevel'])} valid education levels, {len(valid_categories['DevType'])} valid developer types, {len(valid_categories['Industry'])} valid industries, and {len(valid_categories['Age'])} valid age ranges to {valid_categories_path}")
+    print(f"\nSaved {len(valid_categories['Country'])} valid countries, {len(valid_categories['EdLevel'])} valid education levels, {len(valid_categories['DevType'])} valid developer types, {len(valid_categories['Industry'])} valid industries, {len(valid_categories['Age'])} valid age ranges, and {len(valid_categories['ICorPM'])} valid IC/PM values to {valid_categories_path}")
 
     # Compute currency conversion rates per country
     # Use the original data with Currency and CompTotal columns
@@ -192,6 +197,12 @@ def main():
     for age, count in top_age.items():
         print(f"  - {age}: {count:,} ({count/len(df)*100:.1f}%)")
 
+    # Show IC or PM distribution
+    print("\n👥 IC or PM Distribution:")
+    top_icorpm = df["ICorPM"].value_counts().head(10)
+    for icorpm, count in top_icorpm.items():
+        print(f"  - {icorpm}: {count:,} ({count/len(df)*100:.1f}%)")
+
     # Show YearsCode statistics
     print("\n💼 Years of Coding Experience:")
     print(f"  - Min: {df['YearsCode'].min():.1f}")
@@ -259,6 +270,14 @@ def main():
         age_name = feature.replace('Age_', '')
         print(f"  {i:2d}. {age_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
 
+    # ICorPM features
+    print("\n👥 Top 10 IC/PM Features (most common):")
+    icorpm_features = categorical_features[categorical_features.index.str.startswith('ICorPM_')]
+    for i, (feature, count) in enumerate(icorpm_features.head(10).items(), 1):
+        percentage = (count / len(X)) * 100
+        icorpm_name = feature.replace('ICorPM_', '')
+        print(f"  {i:2d}. {icorpm_name:45s} - {count:6.0f} occurrences ({percentage:5.1f}%)")
+
     print(f"\n📊 Total one-hot encoded features: {len(X.columns)}")
     print("   - Numeric: 2 (YearsCode, WorkExp)")
     print(f"   - Country: {len(country_features)}")
@@ -266,6 +285,7 @@ def main():
     print(f"   - DevType: {len(devtype_features)}")
     print(f"   - Industry: {len(industry_features)}")
     print(f"   - Age: {len(age_features)}")
+    print(f"   - ICorPM: {len(icorpm_features)}")
 
     print("=" * 60 + "\n")
 

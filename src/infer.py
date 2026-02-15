@@ -106,6 +106,13 @@ def predict_salary(data: SalaryInput) -> float:
             f"Check config/valid_categories.yaml for all valid values."
         )
 
+    if data.ic_or_pm not in valid_categories["ICorPM"]:
+        raise ValueError(
+            f"Invalid IC or PM value: '{data.ic_or_pm}'. "
+            f"Must be one of {len(valid_categories['ICorPM'])} valid values. "
+            f"Check config/valid_categories.yaml for all valid values."
+        )
+
     # Create a DataFrame with the input data
     input_df = pd.DataFrame(
         {
@@ -116,6 +123,7 @@ def predict_salary(data: SalaryInput) -> float:
             "DevType": [data.dev_type],
             "Industry": [data.industry],
             "Age": [data.age],
+            "ICorPM": [data.ic_or_pm],
         }
     )
 

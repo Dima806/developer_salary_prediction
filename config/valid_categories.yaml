@@ -25,7 +25,6 @@ EdLevel:
 - Bachelor's degree (B.A., B.S., B.Eng., etc.)
 - Master's degree (M.A., M.S., M.Eng., MBA, etc.)
 - Other
-- 'Other (please specify):'
 - Primary/elementary school
 - Professional degree (JD, MD, Ph.D, Ed.D, etc.)
 - Secondary school (e.g. American high school, German Realschule or Gymnasium, etc.)
@@ -48,7 +47,6 @@ DevType:
 - Developer, mobile
 - Engineering manager
 - Other
-- 'Other (please specify):'
 - Senior executive (C-suite, VP, etc.)
 - Student
 - System administrator
@@ -65,7 +63,6 @@ Industry:
 - Manufacturing
 - Media & Advertising Services
 - Other
-- 'Other:'
 - Retail and Consumer Services
 - Software Development
 - Transportation, or Supply Chain
@@ -77,3 +74,7 @@ Age:
 - 55-64 years old
 - 65 years or older
 - Other
+ICorPM:
+- Individual contributor
+- Other
+- People manager

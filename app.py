@@ -32,6 +32,7 @@ with st.sidebar:
         - Developer type
         - Industry
         - Age
+        - Individual contributor or people manager
         """
     )
     st.info("💡 Tip: Results are estimates based on survey averages.")
@@ -43,6 +44,7 @@ with st.sidebar:
     st.write(f"**Developer Types:** {len(valid_categories['DevType'])} available")
     st.write(f"**Industries:** {len(valid_categories['Industry'])} available")
     st.write(f"**Age Ranges:** {len(valid_categories['Age'])} available")
+    st.write(f"**IC/PM Roles:** {len(valid_categories['ICorPM'])} available")
     st.caption("Only values from the training data are shown in the dropdowns.")
 
 # Main input form
@@ -56,6 +58,7 @@ valid_education_levels = valid_categories["EdLevel"]
 valid_dev_types = valid_categories["DevType"]
 valid_industries = valid_categories["Industry"]
 valid_ages = valid_categories["Age"]
+valid_icorpm = valid_categories["ICorPM"]
 
 # Set default values (if available)
 default_country = "United States of America" if "United States of America" in valid_countries else valid_countries[0]
@@ -63,6 +66,7 @@ default_education = "Bachelor's degree (B.A., B.S., B.Eng., etc.)" if "Bachelor'
 default_dev_type = "Developer, back-end" if "Developer, back-end" in valid_dev_types else valid_dev_types[0]
 default_industry = "Software Development" if "Software Development" in valid_industries else valid_industries[0]
 default_age = "25-34 years old" if "25-34 years old" in valid_ages else valid_ages[0]
+default_icorpm = "Individual contributor" if "Individual contributor" in valid_icorpm else valid_icorpm[0]
 
 with col1:
     country = st.selectbox(
@@ -119,6 +123,13 @@ age = st.selectbox(
     help="Developer's age range",
 )
 
+ic_or_pm = st.selectbox(
+    "Individual Contributor or People Manager",
+    options=valid_icorpm,
+    index=valid_icorpm.index(default_icorpm),
+    help="Are you an individual contributor or people manager?",
+)
+
 # Prediction button
 if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
     try:
@@ -131,6 +142,7 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
             dev_type=dev_type,
             industry=industry,
             age=age,
+            ic_or_pm=ic_or_pm,
         )
 
         # Make prediction

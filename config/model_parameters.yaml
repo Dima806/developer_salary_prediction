@@ -29,6 +29,10 @@ features:
     # Minimum occurrences for a category to be kept
     min_frequency: 50
 
+    # Default name for the catch-all "other" category
+    # Variants like "Other (please specify):" and "Other:" are normalized to this
+    other_category: "Other"
+
   # One-hot encoding settings
   encoding:
     # Drop first category to avoid multicollinearity

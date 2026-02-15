@@ -21,6 +21,7 @@ class SalaryInput(BaseModel):
     dev_type: str = Field(..., description="Developer type")
     industry: str = Field(..., description="Industry the developer works in")
     age: str = Field(..., description="Developer's age range")
+    ic_or_pm: str = Field(..., description="Individual contributor or people manager")
 
     class Config:
         """Pydantic configuration."""
@@ -34,5 +35,6 @@ class SalaryInput(BaseModel):
                 "dev_type": "Developer, back-end",
                 "industry": "Software Development",
                 "age": "25-34 years old",
+                "ic_or_pm": "Individual contributor",
             }
         }

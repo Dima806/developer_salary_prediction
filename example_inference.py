@@ -23,6 +23,7 @@ def main():
         dev_type="Developer, full-stack",
         industry="Software Development",
         age="25-34 years old",
+        ic_or_pm="Individual contributor",
     )
 
     print(f"Country: {input_data_1.country}")
@@ -32,6 +33,7 @@ def main():
     print(f"Developer Type: {input_data_1.dev_type}")
     print(f"Industry: {input_data_1.industry}")
     print(f"Age: {input_data_1.age}")
+    print(f"IC or PM: {input_data_1.ic_or_pm}")
 
     salary_1 = predict_salary(input_data_1)
     print(f"💰 Predicted Salary: ${salary_1:,.2f} USD/year")
@@ -48,6 +50,7 @@ def main():
         dev_type="Developer, front-end",
         industry="Fintech",
         age="18-24 years old",
+        ic_or_pm="Individual contributor",
     )
 
     print(f"Country: {input_data_2.country}")
@@ -57,6 +60,7 @@ def main():
     print(f"Developer Type: {input_data_2.dev_type}")
     print(f"Industry: {input_data_2.industry}")
     print(f"Age: {input_data_2.age}")
+    print(f"IC or PM: {input_data_2.ic_or_pm}")
 
     salary_2 = predict_salary(input_data_2)
     print(f"💰 Predicted Salary: ${salary_2:,.2f} USD/year")
@@ -73,6 +77,7 @@ def main():
         dev_type="Engineering manager",
         industry="Banking/Financial Services",
         age="35-44 years old",
+        ic_or_pm="People manager",
     )
 
     print(f"Country: {input_data_3.country}")
@@ -82,6 +87,7 @@ def main():
     print(f"Developer Type: {input_data_3.dev_type}")
     print(f"Industry: {input_data_3.industry}")
     print(f"Age: {input_data_3.age}")
+    print(f"IC or PM: {input_data_3.ic_or_pm}")
 
     salary_3 = predict_salary(input_data_3)
     print(f"💰 Predicted Salary: ${salary_3:,.2f} USD/year")
@@ -98,6 +104,7 @@ def main():
         dev_type="Developer, back-end",
         industry="Manufacturing",
         age="25-34 years old",
+        ic_or_pm="Individual contributor",
     )
 
     print(f"Country: {input_data_4.country}")
@@ -107,6 +114,7 @@ def main():
     print(f"Developer Type: {input_data_4.dev_type}")
     print(f"Industry: {input_data_4.industry}")
     print(f"Age: {input_data_4.age}")
+    print(f"IC or PM: {input_data_4.ic_or_pm}")
 
     salary_4 = predict_salary(input_data_4)
     print(f"💰 Predicted Salary: ${salary_4:,.2f} USD/year")

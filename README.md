@@ -30,7 +30,7 @@ Download the Stack Overflow Developer Survey CSV file:
    data/survey_results_public.csv
    ```
 
-**Required columns:** `Country`, `YearsCode`, `WorkExp`, `EdLevel`, `DevType`, `Industry`, `Age`, `ConvertedCompYearly`
+**Required columns:** `Country`, `YearsCode`, `WorkExp`, `EdLevel`, `DevType`, `Industry`, `Age`, `ICorPM`, `ConvertedCompYearly`
 
 ### 3. Train the Model
 
@@ -43,7 +43,7 @@ This will:
 - Load and preprocess the survey data (with cardinality reduction)
 - Train an XGBoost model with early stopping
 - Save the model to `models/model.pkl`
-- Generate `config/valid_categories.yaml` with valid country, education, developer type, industry, and age values
+- Generate `config/valid_categories.yaml` with valid country, education, developer type, industry, age, and IC/PM values
 
 ### 4. Run the Streamlit App
 
@@ -65,6 +65,7 @@ Launch the Streamlit app and enter:
 - **Developer Type**: Primary developer role
 - **Industry**: Industry the developer works in
 - **Age**: Developer's age range
+- **IC or PM**: Individual contributor or people manager
 
 Click "Predict Salary" to see the estimated annual salary.
 
@@ -84,7 +85,8 @@ input_data = SalaryInput(
     education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
     dev_type="Developer, full-stack",
     industry="Software Development",
-    age="25-34 years old"
+    age="25-34 years old",
+    ic_or_pm="Individual contributor"
 )
 
 # Get prediction
@@ -109,6 +111,7 @@ The model validates inputs against actual training data categories:
 - **Valid Developer Types**: Only developer types from training data (~20 types)
 - **Valid Industries**: Only industries from training data (~15 industries)
 - **Valid Age Ranges**: Only age ranges from training data (~7 ranges)
+- **Valid IC/PM Values**: Only IC/PM values from training data (~3 values)
 
 The Streamlit app uses dropdown menus with only valid options. If you use the programmatic API with invalid values, you'll get a helpful error message pointing to the valid categories file.
 
@@ -125,7 +128,8 @@ invalid_input = SalaryInput(
     education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
     dev_type="Developer, back-end",
     industry="Software Development",
-    age="25-34 years old"
+    age="25-34 years old",
+    ic_or_pm="Individual contributor"
 )
 ```
 
@@ -217,7 +221,7 @@ uv run python -m src.train
 
 **Quick one-liner test:**
 ```bash
-uv run python -c "from src.schema import SalaryInput; from src.infer import predict_salary; test = SalaryInput(country='United States of America', years_code=5.0, work_exp=3.0, education_level='Bachelor'\''s degree (B.A., B.S., B.Eng., etc.)', dev_type='Developer, full-stack', industry='Software Development', age='25-34 years old'); print(f'Prediction: \${predict_salary(test):,.0f}')"
+uv run python -c "from src.schema import SalaryInput; from src.infer import predict_salary; test = SalaryInput(country='United States of America', years_code=5.0, work_exp=3.0, education_level='Bachelor'\''s degree (B.A., B.S., B.Eng., etc.)', dev_type='Developer, full-stack', industry='Software Development', age='25-34 years old', ic_or_pm='Individual contributor'); print(f'Prediction: \${predict_salary(test):,.0f}')"
 ```
 
 **Or run the full example script:**

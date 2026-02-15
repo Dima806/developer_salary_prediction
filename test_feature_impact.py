@@ -17,6 +17,7 @@ def test_years_experience_impact():
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
         "age": "25-34 years old",
+        "ic_or_pm": "Individual contributor",
     }
 
     # Test with different years of experience
@@ -52,6 +53,7 @@ def test_country_impact():
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
         "age": "25-34 years old",
+        "ic_or_pm": "Individual contributor",
     }
 
     # Test with different countries (select diverse ones)
@@ -101,6 +103,7 @@ def test_education_impact():
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
         "age": "25-34 years old",
+        "ic_or_pm": "Individual contributor",
     }
 
     # Test with different education levels
@@ -151,6 +154,7 @@ def test_devtype_impact():
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "industry": "Software Development",
         "age": "25-34 years old",
+        "ic_or_pm": "Individual contributor",
     }
 
     # Test with different developer types (using actual values from trained model)
@@ -201,6 +205,7 @@ def test_industry_impact():
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "dev_type": "Developer, full-stack",
         "age": "25-34 years old",
+        "ic_or_pm": "Individual contributor",
     }
 
     # Test with different industries (using actual values from trained model)
@@ -251,6 +256,7 @@ def test_age_impact():
         "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
+        "ic_or_pm": "Individual contributor",
     }
 
     # Test with different age ranges (using actual values from trained model)
@@ -300,6 +306,7 @@ def test_work_exp_impact():
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
         "age": "25-34 years old",
+        "ic_or_pm": "Individual contributor",
     }
 
     # Test with different years of work experience
@@ -327,29 +334,77 @@ def test_work_exp_impact():
         return False
 
 
+def test_icorpm_impact():
+    """Test that changing IC or PM changes prediction."""
+    print("\n" + "=" * 70)
+    print("TEST 8: IC or PM Impact")
+    print("=" * 70)
+
+    base_input = {
+        "country": "United States of America",
+        "years_code": 5.0,
+        "work_exp": 3.0,
+        "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+        "dev_type": "Developer, full-stack",
+        "industry": "Software Development",
+        "age": "25-34 years old",
+    }
+
+    # Test with different IC/PM values (using actual values from trained model)
+    test_icorpm = [
+        "Individual contributor",
+        "People manager",
+    ]
+
+    # Filter to only values that exist in valid categories
+    test_icorpm = [v for v in test_icorpm if v in valid_categories["ICorPM"]]
+
+    predictions = []
+    for icorpm in test_icorpm:
+        input_data = SalaryInput(**base_input, ic_or_pm=icorpm)
+        salary = predict_salary(input_data)
+        predictions.append(salary)
+        print(f"  IC/PM: {icorpm[:50]:50s} -> Salary: ${salary:,.2f}")
+
+    # Check if predictions are different
+    unique_predictions = len(set(predictions))
+    if unique_predictions == len(predictions):
+        print(f"\n✅ PASS: All {len(predictions)} predictions are different")
+        return True
+    elif unique_predictions == 1:
+        print(f"\n❌ FAIL: All predictions are IDENTICAL (${predictions[0]:,.2f})")
+        print("   This indicates the model is NOT using IC/PM as a feature!")
+        return False
+    else:
+        print(f"\n⚠️  PARTIAL: Only {unique_predictions}/{len(predictions)} unique predictions")
+        print(f"   Duplicate salaries found - possible feature issue")
+        return False
+
+
 def test_combined_features():
     """Test that combining different features produces expected variations."""
     print("\n" + "=" * 70)
-    print("TEST 8: Combined Feature Variations")
+    print("TEST 9: Combined Feature Variations")
     print("=" * 70)
 
     # Create diverse combinations (using actual values from trained model)
     test_cases = [
-        ("India", 2, 1, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, back-end", "Software Development", "18-24 years old"),
-        ("Germany", 5, 3, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Developer, full-stack", "Manufacturing", "25-34 years old"),
-        ("United States of America", 10, 8, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Engineering manager", "Fintech", "35-44 years old"),
-        ("Poland", 15, 12, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, front-end", "Healthcare", "45-54 years old"),
-        ("Brazil", 5, 3, "Some college/university study without earning a degree", "DevOps engineer or professional", "Government", "25-34 years old"),
+        ("India", 2, 1, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, back-end", "Software Development", "18-24 years old", "Individual contributor"),
+        ("Germany", 5, 3, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Developer, full-stack", "Manufacturing", "25-34 years old", "Individual contributor"),
+        ("United States of America", 10, 8, "Master's degree (M.A., M.S., M.Eng., MBA, etc.)", "Engineering manager", "Fintech", "35-44 years old", "People manager"),
+        ("Poland", 15, 12, "Bachelor's degree (B.A., B.S., B.Eng., etc.)", "Developer, front-end", "Healthcare", "45-54 years old", "Individual contributor"),
+        ("Brazil", 5, 3, "Some college/university study without earning a degree", "DevOps engineer or professional", "Government", "25-34 years old", "Individual contributor"),
     ]
 
     predictions = []
-    for country, years, work_exp, education, devtype, industry, age in test_cases:
+    for country, years, work_exp, education, devtype, industry, age, icorpm in test_cases:
         # Skip if not in valid categories
         if (country not in valid_categories["Country"]
                 or education not in valid_categories["EdLevel"]
                 or devtype not in valid_categories["DevType"]
                 or industry not in valid_categories["Industry"]
-                or age not in valid_categories["Age"]):
+                or age not in valid_categories["Age"]
+                or icorpm not in valid_categories["ICorPM"]):
             continue
 
         input_data = SalaryInput(
@@ -360,10 +415,11 @@ def test_combined_features():
             dev_type=devtype,
             industry=industry,
             age=age,
+            ic_or_pm=icorpm,
         )
         salary = predict_salary(input_data)
         predictions.append(salary)
-        print(f"  {country[:15]:15s} | {years:2d}y | {work_exp:2d}w | {education[:25]:25s} | {devtype[:25]:25s} | {industry[:20]:20s} | {age[:15]:15s} -> ${salary:,.2f}")
+        print(f"  {country[:15]:15s} | {years:2d}y | {work_exp:2d}w | {education[:25]:25s} | {devtype[:25]:25s} | {industry[:20]:20s} | {age[:15]:15s} | {icorpm[:5]:5s} -> ${salary:,.2f}")
 
     # Check if predictions are different
     unique_predictions = len(set(predictions))
@@ -392,7 +448,8 @@ def print_feature_analysis():
     devtype_features = [f for f in feature_columns if f.startswith('DevType_')]
     industry_features = [f for f in feature_columns if f.startswith('Industry_')]
     age_features = [f for f in feature_columns if f.startswith('Age_')]
-    numeric_features = [f for f in feature_columns if not f.startswith(('Country_', 'EdLevel_', 'DevType_', 'Industry_', 'Age_'))]
+    icorpm_features = [f for f in feature_columns if f.startswith('ICorPM_')]
+    numeric_features = [f for f in feature_columns if not f.startswith(('Country_', 'EdLevel_', 'DevType_', 'Industry_', 'Age_', 'ICorPM_'))]
 
     print(f"  - Numeric features: {len(numeric_features)} -> {numeric_features}")
     print(f"  - Country features: {len(country_features)}")
@@ -400,6 +457,7 @@ def print_feature_analysis():
     print(f"  - DevType features: {len(devtype_features)}")
     print(f"  - Industry features: {len(industry_features)}")
     print(f"  - Age features: {len(age_features)}")
+    print(f"  - ICorPM features: {len(icorpm_features)}")
 
     if len(country_features) > 0:
         print(f"\nSample country features:")
@@ -426,6 +484,11 @@ def print_feature_analysis():
         for feat in age_features[:5]:
             print(f"    - {feat}")
 
+    if len(icorpm_features) > 0:
+        print(f"\nSample IC/PM features:")
+        for feat in icorpm_features[:5]:
+            print(f"    - {feat}")
+
     # Check if there are any features at all
     if len(country_features) == 0:
         print("\n⚠️  WARNING: No country features found!")
@@ -437,6 +500,8 @@ def print_feature_analysis():
         print("\n⚠️  WARNING: No industry features found!")
     if len(age_features) == 0:
         print("\n⚠️  WARNING: No age features found!")
+    if len(icorpm_features) == 0:
+        print("\n⚠️  WARNING: No IC/PM features found!")
 
 
 def main():
@@ -458,6 +523,7 @@ def main():
         "Industry": test_industry_impact(),
         "Age": test_age_impact(),
         "Work Experience": test_work_exp_impact(),
+        "IC or PM": test_icorpm_impact(),
         "Combined Features": test_combined_features(),
     }
 
