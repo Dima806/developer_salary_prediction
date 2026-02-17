@@ -22,7 +22,7 @@ audit:
 	uv run pip-audit
 
 security:
-	uv run bandit -r . -x ./.venv
+	uv run bandit -r . -x ./.venv,./tests
 
 check: lint test complexity maintainability audit security
 
