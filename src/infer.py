@@ -18,7 +18,7 @@ if not model_path.exists():
     )
 
 with open(model_path, "rb") as f:
-    artifacts = pickle.load(f)
+    artifacts = pickle.load(f)  # nosec B301 - loading trusted local model artifact
     model = artifacts["model"]
     feature_columns = artifacts["feature_columns"]
 
