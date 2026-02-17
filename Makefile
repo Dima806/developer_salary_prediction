@@ -1,4 +1,4 @@
-.PHONY: lint format test coverage complexity maintainability audit security check all
+.PHONY: lint format test coverage complexity maintainability audit security tune check all
 
 lint:
 	uv run ruff check .
@@ -23,6 +23,9 @@ audit:
 
 security:
 	uv run bandit -r . -x ./.venv,./tests -ll
+
+tune:
+	uv run python -m src.tune
 
 check: lint test complexity maintainability audit security
 
