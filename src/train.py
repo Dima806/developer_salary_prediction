@@ -11,6 +11,123 @@ from sklearn.model_selection import KFold, train_test_split
 
 from src.preprocessing import prepare_features, reduce_cardinality
 
+CATEGORICAL_FEATURES = ["Country", "EdLevel", "DevType", "Industry", "Age", "ICorPM"]
+
+
+def filter_salaries(df: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """Filter rows by minimum salary and per-country percentile outlier removal.
+
+    Args:
+        df: DataFrame with ConvertedCompYearly and Country columns.
+        config: Config dict with data.min_salary, data.lower_percentile,
+                data.upper_percentile.
+
+    Returns:
+        Filtered DataFrame with outliers removed.
+    """
+    main_label = "ConvertedCompYearly"
+    min_salary = config["data"]["min_salary"]
+    df = df[df[main_label] > min_salary]
+
+    lower_pct = config["data"]["lower_percentile"] / 100
+    upper_pct = config["data"]["upper_percentile"] / 100
+    lower_bound = df.groupby("Country")[main_label].transform("quantile", lower_pct)
+    upper_bound = df.groupby("Country")[main_label].transform("quantile", upper_pct)
+    df = df[(df[main_label] > lower_bound) & (df[main_label] < upper_bound)]
+
+    df = df.dropna(subset=[main_label])
+    return df
+
+
+def apply_cardinality_reduction(df: pd.DataFrame) -> pd.DataFrame:
+    """Apply cardinality reduction and unicode normalization to categorical columns.
+
+    Args:
+        df: DataFrame with categorical feature columns.
+
+    Returns:
+        DataFrame with reduced cardinality categories.
+    """
+    df = df.copy()
+    for col in CATEGORICAL_FEATURES:
+        df[col] = df[col].str.replace("\u2019", "'", regex=False)
+        df[col] = reduce_cardinality(df[col])
+    return df
+
+
+def drop_other_rows(df: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """Drop rows where specified features have the 'Other' catch-all category.
+
+    Args:
+        df: DataFrame with categorical feature columns (after cardinality reduction).
+        config: Config dict with features.cardinality.other_category and
+                features.cardinality.drop_other_from.
+
+    Returns:
+        DataFrame with 'Other' rows removed from specified features.
+    """
+    other_name = config["features"]["cardinality"].get("other_category", "Other")
+    drop_other_from = config["features"]["cardinality"].get("drop_other_from", [])
+    for col in drop_other_from:
+        df = df[df[col] != other_name]
+    return df
+
+
+def extract_valid_categories(df: pd.DataFrame) -> dict:
+    """Extract sorted unique values per categorical feature for inference validation.
+
+    Args:
+        df: DataFrame with categorical feature columns (after cardinality reduction).
+
+    Returns:
+        Dict mapping feature name to sorted list of valid category values.
+    """
+    return {
+        col: sorted(df[col].dropna().unique().tolist()) for col in CATEGORICAL_FEATURES
+    }
+
+
+def compute_currency_rates(df: pd.DataFrame, valid_countries: list[str]) -> dict:
+    """Compute median currency conversion rates per country.
+
+    Args:
+        df: DataFrame with Country, Currency, CompTotal, ConvertedCompYearly columns.
+        valid_countries: List of valid country names to compute rates for.
+
+    Returns:
+        Dict mapping country to {code, name, rate}.
+    """
+    main_label = "ConvertedCompYearly"
+    currency_df = df[["Country", "Currency", "CompTotal", main_label]].dropna()
+    currency_df = currency_df.copy()
+    currency_df["CurrencyCode"] = currency_df["Currency"].str.split(r"\s+", n=1).str[0]
+    currency_df["CurrencyName"] = currency_df["Currency"].str.split(r"\s+", n=1).str[1]
+    currency_df["rate"] = currency_df["CompTotal"] / currency_df[main_label]
+    currency_df = currency_df[
+        (currency_df["rate"] > 0.001) & (currency_df["rate"] < 100000)
+    ]
+
+    currency_rates = {}
+    for country in valid_countries:
+        country_data = currency_df[currency_df["Country"] == country]
+        if country_data.empty:
+            continue
+        most_common = country_data["CurrencyCode"].mode()
+        if most_common.empty:
+            continue
+        code = most_common.iloc[0]
+        name_row = country_data[country_data["CurrencyCode"] == code].iloc[0]
+        full_name = name_row["CurrencyName"]
+        rates = country_data[country_data["CurrencyCode"] == code]["rate"]
+        median_rate = round(float(rates.median()), 2)
+        currency_rates[country] = {
+            "code": code,
+            "name": full_name,
+            "rate": median_rate,
+        }
+
+    return currency_rates
+
 
 def main():
     """Train and save the salary prediction model."""
@@ -52,88 +169,32 @@ def main():
     print(f"Loaded {len(df):,} rows")
 
     print("Removing null, extremely small and large reported salaries")
-    # select main label
-    main_label = "ConvertedCompYearly"
-    # select records with main label more than min_salary threshold
-    min_salary = config["data"]["min_salary"]
-    df = df[df[main_label] > min_salary]
-    # Exclude outliers based on percentile bounds PER COUNTRY
-    # This preserves records from lower-paid and higher-paid countries
-    # that would otherwise be removed by global percentile filtering
-    lower_pct = config["data"]["lower_percentile"] / 100
-    upper_pct = config["data"]["upper_percentile"] / 100
-    lower_bound = df.groupby("Country")[main_label].transform("quantile", lower_pct)
-    upper_bound = df.groupby("Country")[main_label].transform("quantile", upper_pct)
-    df = df[(df[main_label] > lower_bound) & (df[main_label] < upper_bound)]
+    df = filter_salaries(df, config)
+    print(f"After filtering: {len(df):,} rows")
 
-    print(df.shape)
-
-    # Drop rows with missing target
-    df = df.dropna(subset=[main_label])
-    print(f"After removing missing targets: {len(df):,} rows")
-
-    # Apply preprocessing first to get cardinality-reduced categories
-    df_copy = df.copy()
-
-    # Normalize Unicode apostrophes to regular apostrophes for consistency
-    df_copy["Country"] = df_copy["Country"].str.replace("\u2019", "'", regex=False)
-    df_copy["EdLevel"] = df_copy["EdLevel"].str.replace("\u2019", "'", regex=False)
-    df_copy["DevType"] = df_copy["DevType"].str.replace("\u2019", "'", regex=False)
-    df_copy["Industry"] = df_copy["Industry"].str.replace("\u2019", "'", regex=False)
-    df_copy["Age"] = df_copy["Age"].str.replace("\u2019", "'", regex=False)
-    df_copy["ICorPM"] = df_copy["ICorPM"].str.replace("\u2019", "'", regex=False)
-
-    # Apply cardinality reduction
-    df_copy["Country"] = reduce_cardinality(df_copy["Country"])
-    df_copy["EdLevel"] = reduce_cardinality(df_copy["EdLevel"])
-    df_copy["DevType"] = reduce_cardinality(df_copy["DevType"])
-    df_copy["Industry"] = reduce_cardinality(df_copy["Industry"])
-    df_copy["Age"] = reduce_cardinality(df_copy["Age"])
-    df_copy["ICorPM"] = reduce_cardinality(df_copy["ICorPM"])
-
-    # Apply cardinality reduction to the actual training data as well
-    # (prepare_features no longer does this internally)
-    df["Country"] = reduce_cardinality(df["Country"])
-    df["EdLevel"] = reduce_cardinality(df["EdLevel"])
-    df["DevType"] = reduce_cardinality(df["DevType"])
-    df["Industry"] = reduce_cardinality(df["Industry"])
-    df["Age"] = reduce_cardinality(df["Age"])
-    df["ICorPM"] = reduce_cardinality(df["ICorPM"])
+    # Apply cardinality reduction to a copy (for valid_categories extraction)
+    # and to the main df (for training)
+    df_copy = apply_cardinality_reduction(df)
+    df = apply_cardinality_reduction(df)
 
     # Drop rows with "Other" in specified features (low-quality catch-all categories)
-    other_name = config["features"]["cardinality"].get("other_category", "Other")
+    before_drop = len(df)
+    df = drop_other_rows(df, config)
+    df_copy = drop_other_rows(df_copy, config)
     drop_other_from = config["features"]["cardinality"].get("drop_other_from", [])
     if drop_other_from:
-        before_drop = len(df)
-        for col in drop_other_from:
-            df = df[df[col] != other_name]
-            df_copy = df_copy[df_copy[col] != other_name]
         print(
-            f"Dropped {before_drop - len(df):,} rows with '{other_name}' in {drop_other_from}"
+            f"Dropped {before_drop - len(df):,} rows with 'Other' in {drop_other_from}"
         )
         print(f"After dropping 'Other': {len(df):,} rows")
 
     # Now apply full feature transformations for model training
+    main_label = "ConvertedCompYearly"
     X = prepare_features(df)
     y = df[main_label]
 
     # Save valid categories after cardinality reduction for validation during inference
-    # Extract unique values from the reduced dataframe
-    country_values = df_copy["Country"].dropna().unique().tolist()
-    edlevel_values = df_copy["EdLevel"].dropna().unique().tolist()
-    devtype_values = df_copy["DevType"].dropna().unique().tolist()
-    industry_values = df_copy["Industry"].dropna().unique().tolist()
-    age_values = df_copy["Age"].dropna().unique().tolist()
-    icorpm_values = df_copy["ICorPM"].dropna().unique().tolist()
-
-    valid_categories = {
-        "Country": sorted(country_values),
-        "EdLevel": sorted(edlevel_values),
-        "DevType": sorted(devtype_values),
-        "Industry": sorted(industry_values),
-        "Age": sorted(age_values),
-        "ICorPM": sorted(icorpm_values),
-    }
+    valid_categories = extract_valid_categories(df_copy)
 
     valid_categories_path = Path("config/valid_categories.yaml")
     with open(valid_categories_path, "w") as f:
@@ -144,41 +205,8 @@ def main():
     )
 
     # Compute currency conversion rates per country
-    # Use the original data with Currency and CompTotal columns
     print("\nComputing currency conversion rates per country...")
-    currency_df = df[["Country", "Currency", "CompTotal", main_label]].dropna()
-    # Extract 3-letter currency code from values like "EUR European Euro"
-    currency_df = currency_df.copy()
-    currency_df["CurrencyCode"] = currency_df["Currency"].str.split(r"\s+", n=1).str[0]
-    currency_df["CurrencyName"] = currency_df["Currency"].str.split(r"\s+", n=1).str[1]
-    # Compute conversion rate: local currency / USD
-    currency_df["rate"] = currency_df["CompTotal"] / currency_df[main_label]
-    # Filter out unreasonable rates (negative, zero, or extreme)
-    currency_df = currency_df[
-        (currency_df["rate"] > 0.001) & (currency_df["rate"] < 100000)
-    ]
-
-    currency_rates = {}
-    for country in valid_categories["Country"]:
-        country_data = currency_df[currency_df["Country"] == country]
-        if country_data.empty:
-            continue
-        # Find the most common currency for this country
-        most_common = country_data["CurrencyCode"].mode()
-        if most_common.empty:
-            continue
-        code = most_common.iloc[0]
-        # Get the full name from the first matching record
-        name_row = country_data[country_data["CurrencyCode"] == code].iloc[0]
-        full_name = name_row["CurrencyName"]
-        # Compute median conversion rate for this country+currency pair
-        rates = country_data[country_data["CurrencyCode"] == code]["rate"]
-        median_rate = round(float(rates.median()), 2)
-        currency_rates[country] = {
-            "code": code,
-            "name": full_name,
-            "rate": median_rate,
-        }
+    currency_rates = compute_currency_rates(df, valid_categories["Country"])
 
     currency_rates_path = Path("config/currency_rates.yaml")
     with open(currency_rates_path, "w") as f:

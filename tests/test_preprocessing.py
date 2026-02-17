@@ -60,6 +60,16 @@ class TestReduceCardinality:
         result = reduce_cardinality(series, max_categories=5, min_frequency=50)
         assert set(result.unique()) == {"A", "B", "C"}
 
+    def test_uses_config_defaults_when_no_args(self):
+        """When max_categories/min_frequency not passed, uses config defaults."""
+        values = ["Common"] * 200 + ["Rare"] * 2
+        series = pd.Series(values)
+        # Call without explicit max_categories / min_frequency
+        result = reduce_cardinality(series)
+        # "Rare" should be grouped into "Other" using config defaults
+        assert "Rare" not in result.values
+        assert "Common" in result.values
+
 
 class TestPrepareFeatures:
     """Tests for prepare_features()."""
@@ -120,6 +130,44 @@ class TestPrepareFeatures:
             c for c in result.columns if "_" in c and c not in ("YearsCode", "WorkExp")
         ]
         assert len(categorical_cols) > 0
+
+    def test_renames_legacy_years_code_pro_column(self):
+        """Legacy YearsCodePro column is renamed to YearsCode."""
+        df = pd.DataFrame(
+            {
+                "Country": ["India"],
+                "YearsCodePro": [5.0],
+                "WorkExp": [3.0],
+                "EdLevel": ["Other"],
+                "DevType": ["Developer, back-end"],
+                "Industry": ["Software Development"],
+                "Age": ["25-34 years old"],
+                "ICorPM": ["Individual contributor"],
+            }
+        )
+        result = prepare_features(df)
+        assert "YearsCode" in result.columns
+        assert "YearsCodePro" not in result.columns
+
+    def test_fills_missing_categorical_with_unknown(self):
+        """Missing categorical values are filled with 'Unknown'."""
+        df = pd.DataFrame(
+            {
+                "Country": [None],
+                "YearsCode": [5.0],
+                "WorkExp": [3.0],
+                "EdLevel": [None],
+                "DevType": [None],
+                "Industry": [None],
+                "Age": [None],
+                "ICorPM": [None],
+            }
+        )
+        result = prepare_features(df)
+        # All categoricals should have been filled, resulting in one-hot columns
+        # with "Unknown" as a category
+        unknown_cols = [c for c in result.columns if "Unknown" in c]
+        assert len(unknown_cols) > 0
 
     def test_does_not_modify_original(self):
         """prepare_features does not modify the input DataFrame."""
