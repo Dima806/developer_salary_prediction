@@ -53,7 +53,7 @@ def build_objective(
         optuna_config: Full optuna config dict with search_space, fixed, study.
 
     Returns:
-        Objective function that takes a trial and returns mean RMSE.
+        Objective function that takes a trial and returns mean MAPE.
     """
     search_space = optuna_config["search_space"]
     fixed = optuna_config["fixed"]
@@ -65,7 +65,7 @@ def build_objective(
         params.update(fixed)
 
         kf = KFold(n_splits=cv_splits, shuffle=True, random_state=random_state)
-        rmse_scores = []
+        mape_scores = []
 
         for train_idx, test_idx in kf.split(X):
             X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
@@ -80,10 +80,10 @@ def build_objective(
             )
 
             preds = model.predict(X_test)
-            rmse = np.sqrt(np.mean((y_test - preds) ** 2))
-            rmse_scores.append(rmse)
+            mape = np.mean(np.abs((y_test - preds) / y_test)) * 100
+            mape_scores.append(mape)
 
-        return np.mean(rmse_scores)
+        return np.mean(mape_scores)
 
     return objective
 
@@ -136,7 +136,8 @@ def main():
     if not data_path.exists():
         print(f"Error: Data file not found at {data_path}")
         print(
-            "Please download the Stack Overflow Developer Survey CSV and place it in the data/ directory."
+            "Please download the Stack Overflow Developer Survey CSV "
+            "and place it in the data/ directory."
         )
         return
 
@@ -178,7 +179,7 @@ def main():
 
     # Report results
     print(f"\nBest trial: #{study.best_trial.number}")
-    print(f"Best RMSE: {study.best_value:.4f}")
+    print(f"Best MAPE: {study.best_value:.2f}%")
     print("Best hyperparameters:")
     for name, value in study.best_params.items():
         print(f"  {name}: {value}")

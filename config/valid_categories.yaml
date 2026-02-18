@@ -6,16 +6,26 @@ Country:
 - Canada
 - Czech Republic
 - Denmark
+- Finland
 - France
 - Germany
+- Greece
+- Hungary
 - India
+- Israel
 - Italy
+- Mexico
 - Netherlands
+- New Zealand
+- Norway
 - Poland
 - Portugal
+- Romania
+- South Africa
 - Spain
 - Sweden
 - Switzerland
+- Turkey
 - Ukraine
 - United Kingdom of Great Britain and Northern Ireland
 - United States of America
@@ -31,11 +41,16 @@ EdLevel:
 DevType:
 - AI/ML engineer
 - Academic researcher
+- Applied scientist
 - Architect, software or solutions
 - Cloud infrastructure engineer
+- Cybersecurity or InfoSec professional
 - Data engineer
+- Data or business analyst
 - Data scientist
+- Database administrator or engineer
 - DevOps engineer or professional
+- Developer, AI apps or physical AI
 - Developer, QA or test
 - Developer, back-end
 - Developer, desktop or enterprise applications
@@ -45,8 +60,13 @@ DevType:
 - Developer, game or graphics
 - Developer, mobile
 - Engineering manager
+- Founder, technology or otherwise
+- Product manager
+- Project manager
+- Retired
 - Senior executive (C-suite, VP, etc.)
 - Student
+- Support engineer or analyst
 - System administrator
 Industry:
 - Banking/Financial Services

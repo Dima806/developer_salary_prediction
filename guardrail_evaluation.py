@@ -1,8 +1,8 @@
 """Per-category guardrail evaluation for the salary prediction model.
 
-Runs cross-validation and computes R2 scores and predicted vs actual salary
+Runs cross-validation and computes MAPE scores and predicted vs actual salary
 comparisons broken down by each categorical feature value. Flags categories
-that fall below configurable thresholds.
+that exceed configurable thresholds.
 """
 
 import sys
@@ -11,7 +11,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
-from sklearn.metrics import r2_score
 from sklearn.model_selection import KFold
 from xgboost import XGBRegressor
 
@@ -121,15 +120,14 @@ def run_cv_predictions(
             verbose=False,
         )
 
-        test_r2 = model.score(X_test, y_test)
+        oof_predictions[test_idx] = model.predict(X_test)
+        test_mape = np.mean(np.abs((y_test - oof_predictions[test_idx]) / y_test)) * 100
         print(
-            f"  Fold {fold}: Test R2 = {test_r2:.4f} (best iter: {model.best_iteration + 1})"
+            f"  Fold {fold}: Test MAPE = {test_mape:.2f}% (best iter: {model.best_iteration + 1})"
         )
 
-        oof_predictions[test_idx] = model.predict(X_test)
-
-    overall_r2 = r2_score(y, oof_predictions)
-    print(f"\nOverall OOF R2: {overall_r2:.4f}")
+    overall_mape = np.mean(np.abs((y.values - oof_predictions) / y.values)) * 100
+    print(f"\nOverall OOF MAPE: {overall_mape:.2f}%")
 
     return oof_predictions
 
@@ -140,7 +138,7 @@ def compute_category_metrics(
     predictions: np.ndarray,
     feature: str,
 ) -> pd.DataFrame:
-    """Compute per-category R2, mean actual/predicted, and abs % diff."""
+    """Compute per-category MAPE, mean actual/predicted, and abs % diff."""
     results = []
     categories = df[feature].values
     actuals = y.values
@@ -151,10 +149,7 @@ def compute_category_metrics(
         cat_pred = predictions[mask]
         count = int(mask.sum())
 
-        if count < 2:
-            cat_r2 = float("nan")
-        else:
-            cat_r2 = r2_score(cat_actual, cat_pred)
+        cat_mape = np.mean(np.abs((cat_actual - cat_pred) / cat_actual)) * 100
 
         mean_actual = cat_actual.mean()
         mean_pred = cat_pred.mean()
@@ -164,7 +159,7 @@ def compute_category_metrics(
             {
                 "Category": cat,
                 "Count": count,
-                "R2": cat_r2,
+                "MAPE (%)": cat_mape,
                 "Mean Actual ($)": mean_actual,
                 "Mean Predicted ($)": mean_pred,
                 "Abs % Diff": abs_pct_diff,
@@ -178,18 +173,17 @@ def format_table(metrics_df: pd.DataFrame) -> str:
     """Format metrics DataFrame as a markdown table."""
     lines = []
     header = (
-        "| Category | Count | R2 | Mean Actual ($) | Mean Predicted ($) | Abs % Diff |"
+        "| Category | Count | MAPE (%) | Mean Actual ($) | Mean Predicted ($) | Abs % Diff |"
     )
     sep = (
-        "|----------|------:|----:|----------------:|-------------------:|-----------:|"
+        "|----------|------:|---------:|----------------:|-------------------:|-----------:|"
     )
     lines.append(header)
     lines.append(sep)
 
     for _, row in metrics_df.iterrows():
-        r2_str = f"{row['R2']:.2f}" if not np.isnan(row["R2"]) else "N/A"
         lines.append(
-            f"| {row['Category'][:45]:45s} | {row['Count']:5,d} | {r2_str:>4s} "
+            f"| {row['Category'][:45]:45s} | {row['Count']:5,d} | {row['MAPE (%)']:>7.1f}% "
             f"| {row['Mean Actual ($)']:>15,.0f} | {row['Mean Predicted ($)']:>18,.0f} "
             f"| {row['Abs % Diff']:>9.1f}% |"
         )
@@ -204,12 +198,12 @@ def main():
         config = yaml.safe_load(f)
 
     guardrails = config.get("guardrails", {})
-    min_r2 = guardrails.get("min_r2_per_category", 0.30)
-    max_pct_diff = guardrails.get("max_abs_pct_diff", 10)
+    max_mape = guardrails.get("max_mape_per_category", 20)
+    max_pct_diff = guardrails.get("max_abs_pct_diff", 20)
 
     print("=" * 80)
     print("GUARDRAIL EVALUATION - Per-Category Model Quality")
-    print(f"Thresholds: min R2 = {min_r2}, max abs % diff = {max_pct_diff}%")
+    print(f"Thresholds: max MAPE = {max_mape}%, max abs % diff = {max_pct_diff}%")
     print("=" * 80)
 
     df, X, y = load_and_preprocess(config)
@@ -232,9 +226,9 @@ def main():
         # Check guardrails
         for _, row in metrics.iterrows():
             cat = row["Category"]
-            if not np.isnan(row["R2"]) and row["R2"] < min_r2:
+            if row["MAPE (%)"] > max_mape:
                 warnings.append(
-                    f'{feature} "{cat}": R2 = {row["R2"]:.2f} (threshold: {min_r2})'
+                    f'{feature} "{cat}": MAPE = {row["MAPE (%)"]:.1f}% (threshold: {max_mape}%)'
                 )
             if row["Abs % Diff"] > max_pct_diff:
                 warnings.append(

@@ -414,21 +414,21 @@ def main():
             verbose=False,
         )
 
-        train_r2 = model.score(X_train, y_train)
-        test_r2 = model.score(X_test, y_test)
-        train_scores.append(train_r2)
-        test_scores.append(test_r2)
+        train_mape = np.mean(np.abs((y_train - model.predict(X_train)) / y_train)) * 100
+        test_mape = np.mean(np.abs((y_test - model.predict(X_test)) / y_test)) * 100
+        train_scores.append(train_mape)
+        test_scores.append(test_mape)
         best_iterations.append(model.best_iteration + 1)
         print(
-            f"  Fold {fold}: Train R2 = {train_r2:.4f}, Test R2 = {test_r2:.4f} (best iter: {model.best_iteration + 1})"
+            f"  Fold {fold}: Train MAPE = {train_mape:.2f}%, Test MAPE = {test_mape:.2f}% (best iter: {model.best_iteration + 1})"
         )
 
     avg_train = np.mean(train_scores)
     avg_test = np.mean(test_scores)
     std_test = np.std(test_scores)
     avg_best_iter = int(np.mean(best_iterations))
-    print(f"\nCV Average Train R2: {avg_train:.4f}")
-    print(f"CV Average Test R2:  {avg_test:.4f} (+/- {std_test:.4f})")
+    print(f"\nCV Average Train MAPE: {avg_train:.2f}%")
+    print(f"CV Average Test MAPE:  {avg_test:.2f}% (+/- {std_test:.2f}%)")
     print(f"CV Average best iteration: {avg_best_iter}")
 
     # Train final model on all data for deployment
