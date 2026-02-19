@@ -208,6 +208,37 @@ features:
 
 For detailed development information, see [Claude.md](Claude.md).
 
+### Code Quality
+
+#### Pre-commit hooks
+
+The project uses [pre-commit](https://pre-commit.com) to enforce code quality checks before each commit. Hooks are defined in [.pre-commit-config.yaml](.pre-commit-config.yaml) and run:
+
+- **ruff format** — auto-formats Python files (`make format`)
+- **ruff lint** — checks for linting errors (`make lint`)
+- **Standard checks** — trailing whitespace, end-of-file newline, LF line endings, valid YAML/TOML/JSON, large files, merge conflict markers, stray debug statements
+
+**Install hooks** (once, after cloning):
+```bash
+uv run pre-commit install
+```
+
+Hooks will then run automatically on every `git commit`. To run them manually against all files:
+```bash
+uv run pre-commit run --all-files
+```
+
+#### GitHub Actions CI
+
+A CI workflow ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs automatically on every push to any branch. It:
+
+1. Sets up Python 3.12 and installs `uv`
+2. Installs all dependencies (`uv sync --all-extras`)
+3. Runs `make lint` — ruff linting
+4. Runs `make test` — full pytest suite
+
+The workflow must pass before merging changes.
+
 ### Re-training the Model
 
 If you want to use a different survey year or update the model:

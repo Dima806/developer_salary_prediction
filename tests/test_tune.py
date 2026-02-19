@@ -87,9 +87,7 @@ class TestSaveBestParams:
                 "max_depth": 6,
             },
         }
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(config, f)
             tmp_path = Path(f.name)
 
@@ -110,9 +108,7 @@ class TestSaveBestParams:
             "model": {"n_estimators": 5000, "max_depth": 6},
             "training": {"verbose": False},
         }
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(config, f)
             tmp_path = Path(f.name)
 
@@ -134,9 +130,7 @@ class TestSaveBestParams:
                 "n_jobs": -1,
             },
         }
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(config, f)
             tmp_path = Path(f.name)
 

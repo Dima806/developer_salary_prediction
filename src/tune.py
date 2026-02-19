@@ -36,15 +36,11 @@ def sample_params(trial: optuna.Trial, search_space: dict) -> dict:
             params[name] = trial.suggest_int(name, spec["low"], spec["high"])
         elif param_type == "float":
             log = spec.get("log", False)
-            params[name] = trial.suggest_float(
-                name, spec["low"], spec["high"], log=log
-            )
+            params[name] = trial.suggest_float(name, spec["low"], spec["high"], log=log)
     return params
 
 
-def build_objective(
-    X: pd.DataFrame, y: pd.Series, optuna_config: dict
-) -> callable:
+def build_objective(X: pd.DataFrame, y: pd.Series, optuna_config: dict) -> callable:
     """Build an Optuna objective function for XGBoost CV evaluation.
 
     Args:

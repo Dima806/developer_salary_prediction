@@ -172,12 +172,8 @@ def compute_category_metrics(
 def format_table(metrics_df: pd.DataFrame) -> str:
     """Format metrics DataFrame as a markdown table."""
     lines = []
-    header = (
-        "| Category | Count | MAPE (%) | Mean Actual ($) | Mean Predicted ($) | Abs % Diff |"
-    )
-    sep = (
-        "|----------|------:|---------:|----------------:|-------------------:|-----------:|"
-    )
+    header = "| Category | Count | MAPE (%) | Mean Actual ($) | Mean Predicted ($) | Abs % Diff |"
+    sep = "|----------|------:|---------:|----------------:|-------------------:|-----------:|"
     lines.append(header)
     lines.append(sep)
 
