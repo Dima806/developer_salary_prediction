@@ -33,6 +33,7 @@ with st.sidebar:
         - Industry
         - Age
         - Individual contributor or people manager
+        - Organization size
         """
     )
     st.info("💡 Tip: Results are estimates based on survey averages.")
@@ -45,6 +46,7 @@ with st.sidebar:
     st.write(f"**Industries:** {len(valid_categories['Industry'])} available")
     st.write(f"**Age Ranges:** {len(valid_categories['Age'])} available")
     st.write(f"**IC/PM Roles:** {len(valid_categories['ICorPM'])} available")
+    st.write(f"**Org Sizes:** {len(valid_categories['OrgSize'])} available")
     st.caption("Only values from the training data are shown in the dropdowns.")
 
 # Main input form
@@ -59,6 +61,7 @@ valid_dev_types = valid_categories["DevType"]
 valid_industries = valid_categories["Industry"]
 valid_ages = valid_categories["Age"]
 valid_icorpm = valid_categories["ICorPM"]
+valid_org_sizes = valid_categories["OrgSize"]
 
 # Set default values (if available)
 default_country = (
@@ -86,6 +89,11 @@ default_icorpm = (
     "Individual contributor"
     if "Individual contributor" in valid_icorpm
     else valid_icorpm[0]
+)
+default_org_size = (
+    "20 to 99 employees"
+    if "20 to 99 employees" in valid_org_sizes
+    else valid_org_sizes[0]
 )
 
 with col1:
@@ -150,6 +158,13 @@ ic_or_pm = st.selectbox(
     help="Are you an individual contributor or people manager?",
 )
 
+org_size = st.selectbox(
+    "Organization Size",
+    options=valid_org_sizes,
+    index=valid_org_sizes.index(default_org_size),
+    help="Approximate number of employees at the developer's company",
+)
+
 # Prediction button
 if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
     try:
@@ -163,6 +178,7 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
             industry=industry,
             age=age,
             ic_or_pm=ic_or_pm,
+            org_size=org_size,
         )
 
         # Make prediction

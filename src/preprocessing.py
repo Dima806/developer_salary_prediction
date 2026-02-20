@@ -78,7 +78,8 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     during training and inference, preventing data leakage and inconsistencies.
 
     Args:
-        df: DataFrame with columns: Country, YearsCode, WorkExp, EdLevel, DevType, Industry, Age, ICorPM
+        df: DataFrame with columns: Country, YearsCode, WorkExp, EdLevel,
+            DevType, Industry, Age, ICorPM, OrgSize.
             NOTE: During training, cardinality reduction should be applied to df
             BEFORE calling this function. During inference, valid_categories.yaml
             ensures only valid (already-reduced) categories are used.
@@ -98,14 +99,23 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # Normalize Unicode apostrophes to regular apostrophes for consistency
     # This handles cases where data has \u2019 (') instead of '
-    for col in ["Country", "EdLevel", "DevType", "Industry", "Age", "ICorPM"]:
+    _categorical_cols = [
+        "Country",
+        "EdLevel",
+        "DevType",
+        "Industry",
+        "Age",
+        "ICorPM",
+        "OrgSize",
+    ]
+    for col in _categorical_cols:
         if col in df_processed.columns:
             df_processed[col] = df_processed[col].str.replace(
                 "\u2019", "'", regex=False
             )
 
     # Normalize "Other" category variants (e.g. "Other (please specify):" -> "Other")
-    for col in ["Country", "EdLevel", "DevType", "Industry", "Age", "ICorPM"]:
+    for col in _categorical_cols:
         if col in df_processed.columns:
             df_processed[col] = normalize_other_categories(df_processed[col])
 
@@ -125,6 +135,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     df_processed["Industry"] = df_processed["Industry"].fillna("Unknown")
     df_processed["Age"] = df_processed["Age"].fillna("Unknown")
     df_processed["ICorPM"] = df_processed["ICorPM"].fillna("Unknown")
+    df_processed["OrgSize"] = df_processed["OrgSize"].fillna("Unknown")
 
     # NOTE: Cardinality reduction is NOT applied here
     # It should be applied during training BEFORE calling this function
@@ -140,6 +151,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
         "Industry",
         "Age",
         "ICorPM",
+        "OrgSize",
     ]
     df_features = df_processed[feature_cols]
 

@@ -14,6 +14,7 @@ def test_years_experience_impact():
         "industry": "Software Development",
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
+        "org_size": "20 to 99 employees",
     }
 
     years_tests = [0, 2, 5, 10, 20]
@@ -37,6 +38,7 @@ def test_country_impact():
         "industry": "Software Development",
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
+        "org_size": "20 to 99 employees",
     }
 
     test_countries = [
@@ -71,12 +73,14 @@ def test_education_impact():
         "industry": "Software Development",
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
+        "org_size": "20 to 99 employees",
     }
 
     test_education = [
         e
         for e in [
-            "Secondary school (e.g. American high school, German Realschule or Gymnasium, etc.)",
+            "Secondary school (e.g. American high school, "
+            "German Realschule or Gymnasium, etc.)",
             "Some college/university study without earning a degree",
             "Associate degree (A.A., A.S., etc.)",
             "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
@@ -106,6 +110,7 @@ def test_devtype_impact():
         "industry": "Software Development",
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
+        "org_size": "20 to 99 employees",
     }
 
     test_devtypes = [
@@ -141,6 +146,7 @@ def test_industry_impact():
         "dev_type": "Developer, full-stack",
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
+        "org_size": "20 to 99 employees",
     }
 
     test_industries = [
@@ -176,6 +182,7 @@ def test_age_impact():
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
         "ic_or_pm": "Individual contributor",
+        "org_size": "20 to 99 employees",
     }
 
     test_ages = [
@@ -210,6 +217,7 @@ def test_work_exp_impact():
         "industry": "Software Development",
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
+        "org_size": "20 to 99 employees",
     }
 
     work_exp_tests = [0, 1, 3, 5, 10, 20]
@@ -219,7 +227,8 @@ def test_work_exp_impact():
         predictions.append(predict_salary(input_data))
 
     assert len(set(predictions)) >= len(predictions) - 1, (
-        f"Expected at least {len(predictions) - 1} unique predictions, got {len(set(predictions))}"
+        f"Expected at least {len(predictions) - 1} unique predictions, "
+        f"got {len(set(predictions))}"
     )
 
 
@@ -233,6 +242,7 @@ def test_icorpm_impact():
         "dev_type": "Developer, full-stack",
         "industry": "Software Development",
         "age": "25-34 years old",
+        "org_size": "20 to 99 employees",
     }
 
     test_icorpm = [
@@ -244,6 +254,31 @@ def test_icorpm_impact():
     predictions = []
     for icorpm in test_icorpm:
         input_data = SalaryInput(**base_input, ic_or_pm=icorpm)
+        predictions.append(predict_salary(input_data))
+
+    assert len(set(predictions)) == len(predictions), (
+        f"Expected {len(predictions)} unique predictions, got {len(set(predictions))}"
+    )
+
+
+def test_org_size_impact():
+    """Test that changing organization size changes prediction."""
+    base_input = {
+        "country": "United States of America",
+        "years_code": 5.0,
+        "work_exp": 3.0,
+        "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+        "dev_type": "Developer, full-stack",
+        "industry": "Software Development",
+        "age": "25-34 years old",
+        "ic_or_pm": "Individual contributor",
+    }
+
+    test_org_sizes = valid_categories["OrgSize"][:5]
+
+    predictions = []
+    for org_size in test_org_sizes:
+        input_data = SalaryInput(**base_input, org_size=org_size)
         predictions.append(predict_salary(input_data))
 
     assert len(set(predictions)) == len(predictions), (
@@ -263,6 +298,7 @@ def test_combined_features():
             "Software Development",
             "18-24 years old",
             "Individual contributor",
+            "20 to 99 employees",
         ),
         (
             "Germany",
@@ -273,6 +309,7 @@ def test_combined_features():
             "Manufacturing",
             "25-34 years old",
             "Individual contributor",
+            "100 to 499 employees",
         ),
         (
             "United States of America",
@@ -283,6 +320,7 @@ def test_combined_features():
             "Fintech",
             "35-44 years old",
             "People manager",
+            "1,000 to 4,999 employees",
         ),
         (
             "Poland",
@@ -293,6 +331,7 @@ def test_combined_features():
             "Healthcare",
             "45-54 years old",
             "Individual contributor",
+            "20 to 99 employees",
         ),
         (
             "Brazil",
@@ -303,6 +342,7 @@ def test_combined_features():
             "Government",
             "25-34 years old",
             "Individual contributor",
+            "20 to 99 employees",
         ),
     ]
 
@@ -316,6 +356,7 @@ def test_combined_features():
         industry,
         age,
         icorpm,
+        org_size,
     ) in test_cases:
         if (
             country not in valid_categories["Country"]
@@ -324,6 +365,7 @@ def test_combined_features():
             or industry not in valid_categories["Industry"]
             or age not in valid_categories["Age"]
             or icorpm not in valid_categories["ICorPM"]
+            or org_size not in valid_categories["OrgSize"]
         ):
             continue
 
@@ -336,6 +378,7 @@ def test_combined_features():
             industry=industry,
             age=age,
             ic_or_pm=icorpm,
+            org_size=org_size,
         )
         predictions.append(predict_salary(input_data))
 

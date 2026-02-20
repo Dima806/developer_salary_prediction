@@ -86,6 +86,7 @@ class TestPrepareFeatures:
                 "Industry": ["Software Development"],
                 "Age": ["25-34 years old"],
                 "ICorPM": ["Individual contributor"],
+                "OrgSize": ["20 to 99 employees"],
             }
         )
         result = prepare_features(df)
@@ -104,6 +105,7 @@ class TestPrepareFeatures:
                 "Industry": ["Software Development"],
                 "Age": ["25-34 years old"],
                 "ICorPM": ["Individual contributor"],
+                "OrgSize": ["20 to 99 employees"],
             }
         )
         result = prepare_features(df)
@@ -122,6 +124,7 @@ class TestPrepareFeatures:
                 "Industry": ["Software Development", "Healthcare"],
                 "Age": ["25-34 years old", "35-44 years old"],
                 "ICorPM": ["Individual contributor", "People manager"],
+                "OrgSize": ["20 to 99 employees", "100 to 499 employees"],
             }
         )
         result = prepare_features(df)
@@ -143,6 +146,7 @@ class TestPrepareFeatures:
                 "Industry": ["Software Development"],
                 "Age": ["25-34 years old"],
                 "ICorPM": ["Individual contributor"],
+                "OrgSize": ["20 to 99 employees"],
             }
         )
         result = prepare_features(df)
@@ -161,6 +165,7 @@ class TestPrepareFeatures:
                 "Industry": [None],
                 "Age": [None],
                 "ICorPM": [None],
+                "OrgSize": [None],
             }
         )
         result = prepare_features(df)
@@ -181,6 +186,7 @@ class TestPrepareFeatures:
                 "Industry": ["Software Development"],
                 "Age": ["25-34 years old"],
                 "ICorPM": ["Individual contributor"],
+                "OrgSize": ["20 to 99 employees"],
             }
         )
         original_country = df["Country"].iloc[0]

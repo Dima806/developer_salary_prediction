@@ -18,6 +18,7 @@ class SalaryInput(BaseModel):
                     "industry": "Software Development",
                     "age": "25-34 years old",
                     "ic_or_pm": "Individual contributor",
+                    "org_size": "20 to 99 employees",
                 }
             ]
         }
@@ -39,3 +40,6 @@ class SalaryInput(BaseModel):
     industry: str = Field(..., description="Industry the developer works in")
     age: str = Field(..., description="Developer's age range")
     ic_or_pm: str = Field(..., description="Individual contributor or people manager")
+    org_size: str = Field(
+        ..., description="Size of the organisation the developer works for"
+    )

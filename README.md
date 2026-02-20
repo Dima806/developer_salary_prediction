@@ -45,7 +45,7 @@ Download the Stack Overflow Developer Survey CSV file:
    data/survey_results_public.csv
    ```
 
-**Required columns:** `Country`, `YearsCode`, `WorkExp`, `EdLevel`, `DevType`, `Industry`, `Age`, `ICorPM`, `ConvertedCompYearly`
+**Required columns:** `Country`, `YearsCode`, `WorkExp`, `EdLevel`, `DevType`, `Industry`, `Age`, `ICorPM`, `OrgSize`, `ConvertedCompYearly`
 
 ### 3. Train the Model
 
@@ -141,6 +141,7 @@ Launch the Streamlit app and enter:
 - **Industry**: Industry the developer works in
 - **Age**: Developer's age range
 - **IC or PM**: Individual contributor or people manager
+- **Organization Size**: Approximate number of employees at the developer's company
 
 Click "Predict Salary" to see the estimated annual salary in USD plus a local
 currency equivalent where available.
@@ -159,7 +160,8 @@ input_data = SalaryInput(
     dev_type="Developer, full-stack",
     industry="Software Development",
     age="25-34 years old",
-    ic_or_pm="Individual contributor"
+    ic_or_pm="Individual contributor",
+    org_size="20 to 99 employees",
 )
 
 salary = predict_salary(input_data)
@@ -180,7 +182,7 @@ Validation is enforced at two layers:
 
 Checked at object construction time:
 
-- All 8 fields are required
+- All 9 fields are required
 - `years_code` must be `>= 0`
 - `work_exp` must be `>= 0`
 
@@ -197,6 +199,7 @@ in `config/model_parameters.yaml`):
 - **Valid Industries** (~15) — `Other` dropped
 - **Valid Age Ranges** (~7) — `Other` dropped
 - **Valid IC/PM Values** (~3) — `Other` dropped
+- **Valid Organization Sizes** (~8) — `Other` dropped
 
 Passing an invalid value raises a `ValueError` with a message pointing to
 `config/valid_categories.yaml`.
@@ -425,8 +428,8 @@ v1.0.0-rc.1      # release candidate, final validation
 Tags are applied on `main` after a successful CI run:
 
 ```bash
-git tag v1.2.0
-git push origin v1.2.0
+git tag v2.0.0
+git push origin v2.0.0
 ```
 
 ## Branching Strategy
@@ -434,7 +437,7 @@ git push origin v1.2.0
 The project uses a **GitFlow-inspired** branching model:
 
 ```text
-main ◄──────────────────────────────────── hotfix/v1.0.1
+main ◄──────────────────────────────────── hotfix/v2.0.1
   ▲                                              │
   │ merge + tag                                  │
   │                                         (urgent fix)
@@ -442,7 +445,7 @@ develop ◄──── feature/add-currency-display
     ◄──── feature/new-dev-types
     ◄──── fix/invalid-category-message
     │
-    └──► release/v1.1.0 ──► (final testing) ──► main + tag v1.1.0
+    └──► release/v2.1.0 ──► (final testing) ──► main + tag v2.1.0
 ```
 
 ### Branches
@@ -454,7 +457,7 @@ develop ◄──── feature/add-currency-display
 | `feature/<name>` | New features or improvements (e.g. `feature/add-local-currency`) | `develop` |
 | `fix/<name>` | Non-urgent bug fixes (e.g. `fix/guardrail-error-message`) | `develop` |
 | `release/v<semver>` | Release preparation — version bump, changelog, final QA | `main` and back to `develop` |
-| `hotfix/v<semver>` | Urgent production fixes (e.g. `hotfix/v1.0.1`) | `main` and back to `develop` |
+| `hotfix/v<semver>` | Urgent production fixes (e.g. `hotfix/v2.0.1`) | `main` and back to `develop` |
 
 ### Rules
 
@@ -478,13 +481,13 @@ git push -u origin feature/add-local-currency
 # Open a PR into develop, CI must pass before merging
 
 # Prepare a release
-git checkout -b release/v1.1.0 develop
+git checkout -b release/v2.1.0 develop
 # bump version in pyproject.toml, update changelog
-git push -u origin release/v1.1.0
+git push -u origin release/v2.1.0
 # Open PR into main, merge, tag
 
-git tag v1.1.0
-git push origin v1.1.0
+git tag v2.1.0
+git push origin v2.1.0
 ```
 
 ## Deployment

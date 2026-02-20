@@ -16,6 +16,7 @@ features:
     - Industry
     - Age
     - ICorPM
+    - OrgSize
   encoding:
     drop_first: true
 model:

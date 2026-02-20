@@ -34,6 +34,7 @@ def _make_salary_df(countries=None, salaries=None, n=100) -> pd.DataFrame:
             "Industry": ["Software Development"] * n,
             "Age": ["25-34 years old"] * n,
             "ICorPM": ["Individual contributor"] * n,
+            "OrgSize": ["20 to 99 employees"] * n,
             "Currency": ["USD United States Dollar"] * n,
             "CompTotal": salaries,
             "ConvertedCompYearly": salaries,
@@ -140,6 +141,7 @@ class TestDropOtherRows:
                 "Industry": ["SW", "SW", "SW"],
                 "Age": ["25-34", "25-34", "25-34"],
                 "ICorPM": ["IC", "IC", "IC"],
+                "OrgSize": ["Small", "Small", "Small"],
             }
         )
         config = {
@@ -164,6 +166,7 @@ class TestDropOtherRows:
                 "Industry": ["SW", "SW"],
                 "Age": ["25-34", "25-34"],
                 "ICorPM": ["IC", "IC"],
+                "OrgSize": ["Small", "Small"],
             }
         )
         config = {
@@ -187,6 +190,7 @@ class TestDropOtherRows:
                 "Industry": ["SW", "SW"],
                 "Age": ["25-34", "25-34"],
                 "ICorPM": ["IC", "IC"],
+                "OrgSize": ["Small", "Small"],
             }
         )
         config = {
@@ -214,15 +218,17 @@ class TestExtractValidCategories:
                 "Industry": ["SW", "Fin", "SW"],
                 "Age": ["25-34", "35-44", "25-34"],
                 "ICorPM": ["IC", "PM", "IC"],
+                "OrgSize": ["Small", "Large", "Small"],
             }
         )
         result = extract_valid_categories(df)
         assert result["Country"] == ["Germany", "USA"]
         assert result["EdLevel"] == ["BS", "MS"]
         assert result["ICorPM"] == ["IC", "PM"]
+        assert result["OrgSize"] == ["Large", "Small"]
 
     def test_all_categorical_features_present(self):
-        """All 6 categorical features are present as keys."""
+        """All 7 categorical features are present as keys."""
         df = pd.DataFrame(
             {
                 "Country": ["USA"],
@@ -231,6 +237,7 @@ class TestExtractValidCategories:
                 "Industry": ["SW"],
                 "Age": ["25-34"],
                 "ICorPM": ["IC"],
+                "OrgSize": ["Small"],
             }
         )
         result = extract_valid_categories(df)
@@ -241,6 +248,7 @@ class TestExtractValidCategories:
             "Industry",
             "Age",
             "ICorPM",
+            "OrgSize",
         }
 
     def test_excludes_nan_values(self):
@@ -253,6 +261,7 @@ class TestExtractValidCategories:
                 "Industry": ["SW", "SW"],
                 "Age": ["25-34", "25-34"],
                 "ICorPM": ["IC", "IC"],
+                "OrgSize": ["Small", "Small"],
             }
         )
         result = extract_valid_categories(df)

@@ -11,7 +11,15 @@ from sklearn.model_selection import KFold, train_test_split
 
 from src.preprocessing import prepare_features, reduce_cardinality
 
-CATEGORICAL_FEATURES = ["Country", "EdLevel", "DevType", "Industry", "Age", "ICorPM"]
+CATEGORICAL_FEATURES = [
+    "Country",
+    "EdLevel",
+    "DevType",
+    "Industry",
+    "Age",
+    "ICorPM",
+    "OrgSize",
+]
 
 
 def filter_salaries(df: pd.DataFrame, config: dict) -> pd.DataFrame:
@@ -160,6 +168,7 @@ def main():
             "Industry",
             "Age",
             "ICorPM",
+            "OrgSize",
             "Currency",
             "CompTotal",
             "ConvertedCompYearly",

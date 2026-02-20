@@ -55,6 +55,13 @@ def test_invalid_ic_or_pm(sample_salary_input):
         predict_salary(SalaryInput(**sample_salary_input))
 
 
+def test_invalid_org_size(sample_salary_input):
+    """Invalid organization size raises ValueError."""
+    sample_salary_input["org_size"] = "Megacorp 10M+"
+    with pytest.raises(ValueError, match="Invalid organization size"):
+        predict_salary(SalaryInput(**sample_salary_input))
+
+
 def test_get_local_currency_unknown_country():
     """get_local_currency returns None for unknown country."""
     result = get_local_currency("Narnia", 100000)

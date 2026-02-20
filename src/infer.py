@@ -113,6 +113,13 @@ def predict_salary(data: SalaryInput) -> float:
             f"Check config/valid_categories.yaml for all valid values."
         )
 
+    if data.org_size not in valid_categories["OrgSize"]:
+        raise ValueError(
+            f"Invalid organization size: '{data.org_size}'. "
+            f"Must be one of {len(valid_categories['OrgSize'])} valid sizes. "
+            f"Check config/valid_categories.yaml for all valid values."
+        )
+
     # Create a DataFrame with the input data
     input_df = pd.DataFrame(
         {
@@ -124,6 +131,7 @@ def predict_salary(data: SalaryInput) -> float:
             "Industry": [data.industry],
             "Age": [data.age],
             "ICorPM": [data.ic_or_pm],
+            "OrgSize": [data.org_size],
         }
     )
 

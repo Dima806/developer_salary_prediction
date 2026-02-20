@@ -17,6 +17,7 @@ def test_valid_input(sample_salary_input):
     assert result.industry == sample_salary_input["industry"]
     assert result.age == sample_salary_input["age"]
     assert result.ic_or_pm == sample_salary_input["ic_or_pm"]
+    assert result.org_size == sample_salary_input["org_size"]
 
 
 def test_negative_years_code(sample_salary_input):
@@ -44,6 +45,7 @@ def test_missing_country():
             industry="Software Development",
             age="25-34 years old",
             ic_or_pm="Individual contributor",
+            org_size="20 to 99 employees",
         )
 
 
@@ -54,6 +56,22 @@ def test_missing_education_level():
             country="United States of America",
             years_code=5.0,
             work_exp=3.0,
+            dev_type="Developer, full-stack",
+            industry="Software Development",
+            age="25-34 years old",
+            ic_or_pm="Individual contributor",
+            org_size="20 to 99 employees",
+        )
+
+
+def test_missing_org_size():
+    """Missing org_size raises ValidationError."""
+    with pytest.raises(ValidationError):
+        SalaryInput(
+            country="United States of America",
+            years_code=5.0,
+            work_exp=3.0,
+            education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
             dev_type="Developer, full-stack",
             industry="Software Development",
             age="25-34 years old",

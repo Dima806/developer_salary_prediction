@@ -18,6 +18,7 @@ def sample_salary_input():
         "industry": "Software Development",
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
+        "org_size": "20 to 99 employees",
     }
 
 
