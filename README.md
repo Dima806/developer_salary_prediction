@@ -14,14 +14,14 @@ license: apache-2.0
 
 # Developer Salary Prediction
 
-A minimal, local-first ML application that predicts developer salaries using Stack Overflow Developer Survey data. Built with Python, scikit-learn, Pydantic, and Streamlit.
+A minimal, local-first ML application that predicts developer salaries using Stack Overflow Developer Survey data. Built with Python, XGBoost, Pydantic, and Streamlit.
 
 ## Features
 
 - 🎯 XGBoost (gradient boosting) model for salary prediction
-- ✅ Input validation with Pydantic
+- ✅ Input validation with Pydantic (schema) and runtime guardrails (valid categories)
 - 🌐 Interactive web UI with Streamlit
-- 📊 Trained on Stack Overflow Developer Survey data
+- 📊 Trained on Stack Overflow 2025 Developer Survey data
 - 🔧 Easy setup with `uv` package manager
 
 ## Quick Start
@@ -37,7 +37,7 @@ uv sync
 Download the Stack Overflow Developer Survey CSV file:
 
 1. Visit: https://insights.stackoverflow.com/survey
-2. Download the latest survey results (2024 or 2025)
+2. Download the latest survey results (2025)
 3. Extract the `survey_results_public.csv` file
 4. Place it in the `data/` directory:
 
@@ -56,10 +56,12 @@ uv run python -m src.train
 This will:
 
 - Load configuration from `config/model_parameters.yaml`
-- Load and preprocess the survey data (with cardinality reduction)
-- Train an XGBoost model with early stopping
-- Save the model to `models/model.pkl`
-- Generate `config/valid_categories.yaml` with valid country, education, developer type, industry, age, and IC/PM values
+- Filter salaries and reduce cardinality of categorical features
+- Run 5-fold cross-validation and report mean MAPE per fold
+- Train a final XGBoost model on the full dataset with early stopping
+- Save the model artifact to `models/model.pkl`
+- Generate `config/valid_categories.yaml` — valid input values for runtime guardrails
+- Generate `config/currency_rates.yaml` — per-country median currency conversion rates
 
 ### 4. Run the Streamlit App
 
@@ -68,6 +70,62 @@ uv run streamlit run app.py
 ```
 
 The app will open in your browser at `http://localhost:8501`
+
+## Development Cycle
+
+The full development workflow from data to deployment:
+
+```text
+data/ ──► (optional) tune ──► train ──► test ──► commit ──► CI passes ──► deploy
+```
+
+### Step-by-step
+
+#### 1. (Optional) Tune hyperparameters
+
+Run Optuna to search for optimal XGBoost hyperparameters. The search space is
+defined in `config/optuna_config.yaml`. Best parameters are written directly
+back into `config/model_parameters.yaml`.
+
+```bash
+make tune
+# or with a custom number of trials:
+uv run python -m src.tune --n-trials 50
+```
+
+#### 2. Train the model
+
+```bash
+uv run python -m src.train
+```
+
+#### 3. Check code quality (lint + test + complexity + security)
+
+```bash
+make check
+```
+
+This runs all quality gates in sequence:
+
+| Target | Tool | What it checks |
+| ------ | ---- | -------------- |
+| `make lint` | ruff | Style and linting errors |
+| `make format` | ruff | Auto-formats code |
+| `make test` | pytest | Unit and integration tests |
+| `make coverage` | pytest-cov | Test coverage report |
+| `make complexity` | radon CC | Cyclomatic complexity |
+| `make maintainability` | radon MI | Maintainability index |
+| `make audit` | pip-audit | Dependency vulnerability scan |
+| `make security` | bandit | Static security analysis |
+
+`make check` runs lint, test, complexity, maintainability, audit, and security together.
+`make all` is an alias for `make check`.
+
+#### 4. Run all pre-commit checks manually
+
+```bash
+uv run pre-commit run --all-files
+```
 
 ## Usage
 
@@ -84,17 +142,15 @@ Launch the Streamlit app and enter:
 - **Age**: Developer's age range
 - **IC or PM**: Individual contributor or people manager
 
-Click "Predict Salary" to see the estimated annual salary.
+Click "Predict Salary" to see the estimated annual salary in USD plus a local
+currency equivalent where available.
 
 ### Programmatic Usage
-
-**Quick example:**
 
 ```python
 from src.schema import SalaryInput
 from src.infer import predict_salary
 
-# Create input
 input_data = SalaryInput(
     country="United States of America",
     years_code=5.0,
@@ -106,7 +162,6 @@ input_data = SalaryInput(
     ic_or_pm="Individual contributor"
 )
 
-# Get prediction
 salary = predict_salary(input_data)
 print(f"Estimated salary: ${salary:,.0f}")
 ```
@@ -117,38 +172,43 @@ print(f"Estimated salary: ${salary:,.0f}")
 uv run python example_inference.py
 ```
 
-This will show predictions for multiple sample scenarios (junior, mid-level, senior developers, different countries).
+## Input Validation and Guardrails
 
-## Input Validation
+Validation is enforced at two layers:
 
-The model validates inputs against actual training data categories:
+### Layer 1 — Pydantic schema (`src/schema.py`)
 
-- **Valid Countries**: Only countries from `config/valid_categories.yaml` (~21 countries)
-- **Valid Education Levels**: Only education levels from training data (~9 levels)
-- **Valid Developer Types**: Only developer types from training data (~20 types)
-- **Valid Industries**: Only industries from training data (~15 industries)
-- **Valid Age Ranges**: Only age ranges from training data (~7 ranges)
-- **Valid IC/PM Values**: Only IC/PM values from training data (~3 values)
+Checked at object construction time:
 
-The Streamlit app uses dropdown menus with only valid options. If you use the programmatic API with invalid values, you'll get a helpful error message pointing to the valid categories file.
+- All 8 fields are required
+- `years_code` must be `>= 0`
+- `work_exp` must be `>= 0`
 
-**Example validation:**
+### Layer 2 — Runtime category guardrails (`src/infer.py`)
+
+Checked at inference time against `config/valid_categories.yaml`, which is
+generated during training to reflect only categories that appeared frequently
+enough in the training data (controlled by `features.cardinality.min_frequency`
+in `config/model_parameters.yaml`):
+
+- **Valid Countries** (~21) — low-frequency countries collapsed to `Other`, which is then dropped
+- **Valid Education Levels** (~9)
+- **Valid Developer Types** (~20) — `Other` dropped
+- **Valid Industries** (~15) — `Other` dropped
+- **Valid Age Ranges** (~7) — `Other` dropped
+- **Valid IC/PM Values** (~3) — `Other` dropped
+
+Passing an invalid value raises a `ValueError` with a message pointing to
+`config/valid_categories.yaml`.
+
+**Example:**
 
 ```python
 from src.infer import predict_salary
 from src.schema import SalaryInput
 
-# This will raise ValueError - Japan not in training data after cardinality reduction
-invalid_input = SalaryInput(
-    country="Japan",  # Invalid!
-    years_code=5.0,
-    work_exp=3.0,
-    education_level="Bachelor's degree (B.A., B.S., B.Eng., etc.)",
-    dev_type="Developer, back-end",
-    industry="Software Development",
-    age="25-34 years old",
-    ic_or_pm="Individual contributor"
-)
+# Raises ValueError: "Invalid country: 'Japan'. Check config/valid_categories.yaml"
+predict_salary(SalaryInput(country="Japan", ...))
 ```
 
 **View valid categories:**
@@ -157,39 +217,76 @@ invalid_input = SalaryInput(
 cat config/valid_categories.yaml
 ```
 
+### Model guardrails (`config/model_parameters.yaml`)
+
+The `guardrails` section defines thresholds used during training evaluation:
+
+```yaml
+guardrails:
+  max_mape_per_category: 100   # max acceptable MAPE per category (%)
+  max_abs_pct_diff: 100        # max acceptable absolute % difference
+```
+
+## Testing
+
+Tests live in `tests/` and cover all major modules:
+
+| File | What it tests |
+| ---- | ------------- |
+| `test_schema.py` | Pydantic validation — required fields, `ge=0` constraints |
+| `test_infer.py` | Inference pipeline — valid predictions, `ValueError` on invalid categories, currency lookup |
+| `test_train.py` | Training helpers — salary filtering, cardinality reduction, valid category extraction, currency rate computation |
+| `test_preprocessing.py` | Feature engineering — one-hot encoding, numeric transforms |
+| `test_tune.py` | Optuna helpers — parameter sampling, objective function construction, best-param saving |
+| `test_feature_impact.py` | Model sanity — changing each input feature (country, education, dev type, etc.) produces a distinct prediction |
+
+Run all tests:
+
+```bash
+make test
+```
+
+Run with coverage:
+
+```bash
+make coverage
+```
+
 ## Configuration
 
-Model parameters are centralized in [config/model_parameters.yaml](config/model_parameters.yaml). You can customize:
+All runtime parameters are centralised in two YAML files:
+
+### `config/model_parameters.yaml`
+
+Controls data processing, feature engineering, model hyperparameters, training
+settings, and guardrail thresholds. You can customise:
 
 - **Data Processing**: Salary thresholds, percentile bounds, train/test split ratio
 - **Feature Engineering**: Cardinality reduction settings (max categories, min frequency)
 - **Model Hyperparameters**: Learning rate, tree depth, early stopping, etc.
 - **Training Settings**: Verbosity, model save path
-
-**To modify parameters:**
-
-```bash
-# Edit the config file
-nano config/model_parameters.yaml
-
-# Then retrain the model
-uv run python -m src.train
-```
+- **Guardrails**: MAPE thresholds for model evaluation
 
 **Example parameter changes:**
 
 ```yaml
 # Increase model complexity
 model:
-  max_depth: 8                 # Default: 6
+  max_depth: 8                 # Default: 3
   n_estimators: 10000          # Default: 5000
 
 # Keep more categories
 features:
   cardinality:
-    max_categories: 30         # Default: 20
-    min_frequency: 100         # Default: 50
+    max_categories: 30         # Default: 30
+    min_frequency: 50          # Default: 50
 ```
+
+### `config/optuna_config.yaml`
+
+Controls the Optuna hyperparameter search — search space (type, bounds, log
+scale), number of trials, CV folds, and fixed parameters that are not tuned
+(e.g. `n_estimators`, `random_state`).
 
 ## Project Structure
 
@@ -197,22 +294,34 @@ features:
 .
 ├── .github/
 │   └── workflows/
-│       └── ci.yml               # GitHub Actions CI (lint + test)
+│       └── ci.yml                   # GitHub Actions CI (lint + test)
 ├── config/
-│   ├── model_parameters.yaml        # Model configuration
-│   └── valid_categories.yaml        # Valid input categories (generated)
+│   ├── model_parameters.yaml        # Model configuration and guardrails
+│   ├── optuna_config.yaml           # Optuna hyperparameter search space
+│   ├── valid_categories.yaml        # Valid input categories (generated by training)
+│   └── currency_rates.yaml          # Per-country currency rates (generated by training)
 ├── data/
 │   └── survey_results_public.csv    # Stack Overflow survey data (download required)
 ├── models/
-│   └── model.pkl                    # Trained model (generated)
+│   └── model.pkl                    # Trained model artifact (generated by training)
 ├── src/
-│   ├── __init__.py                  # Package initialization
-│   ├── schema.py                    # Pydantic models
-│   ├── preprocessing.py             # Feature engineering utilities
-│   ├── train.py                     # Training script
-│   └── infer.py                     # Inference utilities
+│   ├── __init__.py
+│   ├── schema.py                    # Pydantic input model
+│   ├── preprocessing.py             # Feature engineering (one-hot encoding, scaling)
+│   ├── train.py                     # Training pipeline
+│   ├── tune.py                      # Optuna hyperparameter optimisation
+│   └── infer.py                     # Inference with runtime guardrails
+├── tests/
+│   ├── conftest.py                  # Shared pytest fixtures
+│   ├── test_schema.py
+│   ├── test_infer.py
+│   ├── test_train.py
+│   ├── test_preprocessing.py
+│   ├── test_tune.py
+│   └── test_feature_impact.py
 ├── app.py                           # Streamlit web app
-├── example_inference.py             # Example inference script
+├── example_inference.py             # Inference usage examples
+├── Makefile                         # Developer workflow commands
 ├── .pre-commit-config.yaml          # Pre-commit hooks
 ├── pyproject.toml                   # Project dependencies
 └── README.md                        # This file (also Hugging Face Space config)
@@ -221,12 +330,17 @@ features:
 ## Tech Stack
 
 - **Python 3.12+**
-- **uv** - Package manager
-- **pandas** - Data manipulation
-- **xgboost** - Gradient boosting model
-- **scikit-learn** - ML utilities (train/test split)
-- **pydantic** - Data validation
-- **streamlit** - Web UI
+- **uv** — Package manager
+- **pandas** — Data manipulation
+- **xgboost** — Gradient boosting model
+- **scikit-learn** — Cross-validation and train/test split
+- **optuna** — Hyperparameter optimisation
+- **pydantic** — Input schema validation
+- **streamlit** — Web UI
+- **ruff** — Linting and formatting
+- **radon** — Complexity and maintainability metrics
+- **bandit** — Static security analysis
+- **pip-audit** — Dependency vulnerability scanning
 
 ## Development
 
@@ -270,22 +384,107 @@ The workflow must pass before merging changes.
 If you want to use a different survey year or update the model:
 
 ```bash
-# Place new CSV in data/ directory
+# 1. Place new CSV in data/
+# 2. (Optional) tune first
+make tune
+# 3. Retrain
 uv run python -m src.train
 ```
 
 ### Running Tests
 
-**Quick one-liner test:**
-
 ```bash
-uv run python -c "from src.schema import SalaryInput; from src.infer import predict_salary; test = SalaryInput(country='United States of America', years_code=5.0, work_exp=3.0, education_level='Bachelor'\''s degree (B.A., B.S., B.Eng., etc.)', dev_type='Developer, full-stack', industry='Software Development', age='25-34 years old', ic_or_pm='Individual contributor'); print(f'Prediction: \${predict_salary(test):,.0f}')"
+# Run all tests
+make test
+
+# Run with coverage report
+make coverage
+
+# Run a specific test file
+uv run pytest tests/test_infer.py -v
 ```
 
-**Or run the full example script:**
+## Versioning
+
+This project follows [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`):
+
+| Version bump | When to use | Examples |
+| --- | --- | --- |
+| **MAJOR** | Breaking changes to the public interface | New required input field, incompatible model artifact format, renamed API |
+| **MINOR** | Backward-compatible new features | New optional input field, new supported country, new Makefile target, UI addition |
+| **PATCH** | Backward-compatible fixes and improvements | Bug fixes, model retrain with same schema, config tuning, dependency updates |
+
+**Pre-release suffixes** (for work in progress):
+
+```text
+v1.0.0-alpha.1   # early development, unstable
+v1.0.0-beta.1    # feature-complete, under testing
+v1.0.0-rc.1      # release candidate, final validation
+```
+
+Tags are applied on `main` after a successful CI run:
 
 ```bash
-uv run python example_inference.py
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+## Branching Strategy
+
+The project uses a **GitFlow-inspired** branching model:
+
+```text
+main ◄──────────────────────────────────── hotfix/v1.0.1
+  ▲                                              │
+  │ merge + tag                                  │
+  │                                         (urgent fix)
+develop ◄──── feature/add-currency-display
+    ◄──── feature/new-dev-types
+    ◄──── fix/invalid-category-message
+    │
+    └──► release/v1.1.0 ──► (final testing) ──► main + tag v1.1.0
+```
+
+### Branches
+
+| Branch | Purpose | Merges into |
+| ------ | ------- | ----------- |
+| `main` | Production-ready code, always deployable. Tagged on every release. | — |
+| `develop` | Integration branch for completed features. Base for new work. | `main` via release branch |
+| `feature/<name>` | New features or improvements (e.g. `feature/add-local-currency`) | `develop` |
+| `fix/<name>` | Non-urgent bug fixes (e.g. `fix/guardrail-error-message`) | `develop` |
+| `release/v<semver>` | Release preparation — version bump, changelog, final QA | `main` and back to `develop` |
+| `hotfix/v<semver>` | Urgent production fixes (e.g. `hotfix/v1.0.1`) | `main` and back to `develop` |
+
+### Rules
+
+- **`main`** is protected — no direct pushes; merge only via PR after CI passes
+- **`develop`** is the default branch for day-to-day work
+- Branch names use lowercase kebab-case: `feature/optuna-cv-splits`
+- Every merge to `main` is tagged with a semver version
+- Hotfixes branch off `main` directly and merge back to both `main` and `develop`
+
+### Typical workflow
+
+```bash
+# Start a new feature
+git checkout develop
+git pull origin develop
+git checkout -b feature/add-local-currency
+
+# ... work, commit, push ...
+git push -u origin feature/add-local-currency
+
+# Open a PR into develop, CI must pass before merging
+
+# Prepare a release
+git checkout -b release/v1.1.0 develop
+# bump version in pyproject.toml, update changelog
+git push -u origin release/v1.1.0
+# Open PR into main, merge, tag
+
+git tag v1.1.0
+git push origin v1.1.0
 ```
 
 ## Deployment
@@ -308,7 +507,7 @@ To deploy your own copy:
    git push space main
    ```
 
-**Note:** The pre-trained model (`models/model.pkl`) and configuration (`config/valid_categories.yaml`) must be present before building the Docker image. Train locally first if needed.
+**Note:** The pre-trained model (`models/model.pkl`) and configuration (`config/valid_categories.yaml`, `config/currency_rates.yaml`) must be present before building the Docker image. Train locally first if needed.
 
 ### Local Docker
 
@@ -342,6 +541,11 @@ streamlit run app.py
 
 - Run `uv run python -m src.train` first to generate the model
 
+### "Valid categories file not found"
+
+- Run `uv run python -m src.train` — training generates both `models/model.pkl`
+  and `config/valid_categories.yaml`
+
 ### "Data file not found"
 
 - Download the Stack Overflow survey CSV and place it in `data/`
@@ -357,10 +561,11 @@ streamlit run app.py
 
 ## Design Principles
 
-- **Simplicity**: Under 200 lines of code total
-- **Clarity**: Easy to understand and modify
-- **Local-first**: No cloud dependencies
-- **Hackable**: Plain Python, no complex frameworks
+- **Simplicity**: Minimal codebase, easy to read and modify
+- **Separation of concerns**: Schema validation, preprocessing, training, and inference are distinct modules
+- **Config-driven**: All tunable parameters in YAML — no magic numbers in code
+- **Local-first**: No cloud dependencies for training or inference
+- **Testable**: Every public function has unit tests; model sanity covered by feature-impact tests
 
 ## License
 
