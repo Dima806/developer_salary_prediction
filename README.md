@@ -1,3 +1,17 @@
+---
+title: Developer Salary Prediction
+emoji: 🚀
+colorFrom: red
+colorTo: red
+sdk: docker
+app_port: 8501
+tags:
+- streamlit
+pinned: false
+short_description: Developer salary prediction using 2025 Stackoverflow survey
+license: apache-2.0
+---
+
 # Developer Salary Prediction
 
 A minimal, local-first ML application that predicts developer salaries using Stack Overflow Developer Survey data. Built with Python, scikit-learn, Pydantic, and Streamlit.
@@ -26,7 +40,8 @@ Download the Stack Overflow Developer Survey CSV file:
 2. Download the latest survey results (2024 or 2025)
 3. Extract the `survey_results_public.csv` file
 4. Place it in the `data/` directory:
-   ```
+
+   ```text
    data/survey_results_public.csv
    ```
 
@@ -39,6 +54,7 @@ uv run python -m src.train
 ```
 
 This will:
+
 - Load configuration from `config/model_parameters.yaml`
 - Load and preprocess the survey data (with cardinality reduction)
 - Train an XGBoost model with early stopping
@@ -58,6 +74,7 @@ The app will open in your browser at `http://localhost:8501`
 ### Web Interface
 
 Launch the Streamlit app and enter:
+
 - **Country**: Developer's country
 - **Years of Coding (Total)**: Total years coding including education
 - **Years of Professional Work Experience**: Years of professional work experience
@@ -116,6 +133,7 @@ The model validates inputs against actual training data categories:
 The Streamlit app uses dropdown menus with only valid options. If you use the programmatic API with invalid values, you'll get a helpful error message pointing to the valid categories file.
 
 **Example validation:**
+
 ```python
 from src.infer import predict_salary
 from src.schema import SalaryInput
@@ -134,6 +152,7 @@ invalid_input = SalaryInput(
 ```
 
 **View valid categories:**
+
 ```bash
 cat config/valid_categories.yaml
 ```
@@ -158,6 +177,7 @@ uv run python -m src.train
 ```
 
 **Example parameter changes:**
+
 ```yaml
 # Increase model complexity
 model:
@@ -173,8 +193,11 @@ features:
 
 ## Project Structure
 
-```
+```text
 .
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # GitHub Actions CI (lint + test)
 ├── config/
 │   ├── model_parameters.yaml        # Model configuration
 │   └── valid_categories.yaml        # Valid input categories (generated)
@@ -190,8 +213,9 @@ features:
 │   └── infer.py                     # Inference utilities
 ├── app.py                           # Streamlit web app
 ├── example_inference.py             # Example inference script
+├── .pre-commit-config.yaml          # Pre-commit hooks
 ├── pyproject.toml                   # Project dependencies
-└── README.md                        # This file
+└── README.md                        # This file (also Hugging Face Space config)
 ```
 
 ## Tech Stack
@@ -219,11 +243,13 @@ The project uses [pre-commit](https://pre-commit.com) to enforce code quality ch
 - **Standard checks** — trailing whitespace, end-of-file newline, LF line endings, valid YAML/TOML/JSON, large files, merge conflict markers, stray debug statements
 
 **Install hooks** (once, after cloning):
+
 ```bash
 uv run pre-commit install
 ```
 
 Hooks will then run automatically on every `git commit`. To run them manually against all files:
+
 ```bash
 uv run pre-commit run --all-files
 ```
@@ -251,11 +277,13 @@ uv run python -m src.train
 ### Running Tests
 
 **Quick one-liner test:**
+
 ```bash
 uv run python -c "from src.schema import SalaryInput; from src.infer import predict_salary; test = SalaryInput(country='United States of America', years_code=5.0, work_exp=3.0, education_level='Bachelor'\''s degree (B.A., B.S., B.Eng., etc.)', dev_type='Developer, full-stack', industry='Software Development', age='25-34 years old', ic_or_pm='Individual contributor'); print(f'Prediction: \${predict_salary(test):,.0f}')"
 ```
 
 **Or run the full example script:**
+
 ```bash
 uv run python example_inference.py
 ```
@@ -264,53 +292,45 @@ uv run python example_inference.py
 
 ### Hugging Face Spaces
 
-This application is Docker-ready for deployment on Hugging Face Spaces:
+The app is deployed on [Hugging Face Spaces](https://huggingface.co/spaces) using the Docker SDK. The Space configuration is embedded in the frontmatter at the top of this README, which Hugging Face reads automatically:
 
-**1. Build the Docker image:**
+- **SDK**: Docker (runs the `Dockerfile` in the repo root)
+- **Port**: 8501 (Streamlit default)
+- **License**: Apache 2.0
+
+To deploy your own copy:
+
+1. Create a new Space on [Hugging Face](https://huggingface.co/new-space) and select "Docker" as the SDK
+2. Push this repository to your Space:
+
+   ```bash
+   git remote add space https://huggingface.co/spaces/<your-username>/<your-space-name>
+   git push space main
+   ```
+
+**Note:** The pre-trained model (`models/model.pkl`) and configuration (`config/valid_categories.yaml`) must be present before building the Docker image. Train locally first if needed.
+
+### Local Docker
+
+**Build and run:**
+
 ```bash
 docker build -t developer-salary-predictor .
-```
-
-**2. Test locally:**
-```bash
 docker run -p 8501:8501 developer-salary-predictor
 ```
 
 Then visit `http://localhost:8501`
 
-**3. Deploy to Hugging Face:**
-
-1. Create a new Space on [Hugging Face](https://huggingface.co/new-space)
-2. Select "Docker" as the SDK
-3. Clone your Space repository
-4. Copy these files to your Space:
-
-   ```text
-   Dockerfile
-   requirements.txt
-   app.py
-   src/
-   config/
-   models/
-   ```
-
-5. Push to your Space:
-   ```bash
-   git add .
-   git commit -m "Initial deployment"
-   git push
-   ```
-
-**Note:** The pre-trained model (`models/model.pkl`) and configuration (`config/valid_categories.yaml`) are included in the Docker image. If you want to use a different model, retrain locally first, then rebuild the Docker image.
-
-### Alternative: Local Deployment
+### Local (without Docker)
 
 **Using uv (recommended for development):**
+
 ```bash
 uv run streamlit run app.py
 ```
 
 **Using pip:**
+
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
@@ -319,16 +339,20 @@ streamlit run app.py
 ## Troubleshooting
 
 ### "Model file not found"
+
 - Run `uv run python -m src.train` first to generate the model
 
 ### "Data file not found"
+
 - Download the Stack Overflow survey CSV and place it in `data/`
 
 ### "Configuration file not found"
+
 - The `config/model_parameters.yaml` file should exist in the project root
 - Check that you're running commands from the project root directory
 
 ### Dependencies issues
+
 - Run `uv sync` to ensure all packages are installed
 
 ## Design Principles
