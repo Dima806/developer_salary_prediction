@@ -93,6 +93,7 @@ make check   # lint + test + complexity + maintainability + audit + security
 | `make maintainability` | radon maintainability index |
 | `make audit` | pip-audit dependency vulnerability scan |
 | `make security` | bandit static security analysis |
+| `make pre-process` | Validate data + generate config artifacts (no model) |
 | `make tune` | Optuna hyperparameter search |
 
 ### Training the model
@@ -102,6 +103,7 @@ uv run python -m src.train
 ```
 
 Generates:
+
 - `models/model.pkl` — trained XGBoost model
 - `config/valid_categories.yaml` — valid input values for runtime guardrails
 - `config/currency_rates.yaml` — per-country median currency conversion rates

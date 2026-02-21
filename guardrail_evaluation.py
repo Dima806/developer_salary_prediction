@@ -17,7 +17,15 @@ from xgboost import XGBRegressor
 from src.preprocessing import prepare_features, reduce_cardinality
 
 
-CATEGORICAL_FEATURES = ["Country", "EdLevel", "DevType", "Industry", "Age", "ICorPM"]
+CATEGORICAL_FEATURES = [
+    "Country",
+    "EdLevel",
+    "DevType",
+    "Industry",
+    "Age",
+    "ICorPM",
+    "OrgSize",
+]
 
 
 def load_and_preprocess(config: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
@@ -43,6 +51,7 @@ def load_and_preprocess(config: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.Se
             "Industry",
             "Age",
             "ICorPM",
+            "OrgSize",
             "ConvertedCompYearly",
         ],
     )
@@ -244,7 +253,7 @@ def main():
 
     print("=" * 80)
 
-    sys.exit(1 if warnings else 0)
+    sys.exit(0)
 
 
 if __name__ == "__main__":

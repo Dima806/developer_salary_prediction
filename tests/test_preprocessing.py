@@ -61,7 +61,7 @@ class TestReduceCardinality:
         assert set(result.unique()) == {"A", "B", "C"}
 
     def test_uses_config_defaults_when_no_args(self):
-        """When max_categories/min_frequency not passed, uses config defaults."""
+        """Without explicit args, falls back to config defaults."""
         values = ["Common"] * 200 + ["Rare"] * 2
         series = pd.Series(values)
         # Call without explicit max_categories / min_frequency
@@ -129,8 +129,9 @@ class TestPrepareFeatures:
         )
         result = prepare_features(df)
         # Should have one-hot columns for categorical features
+        non_numeric = ("YearsCode", "WorkExp")
         categorical_cols = [
-            c for c in result.columns if "_" in c and c not in ("YearsCode", "WorkExp")
+            c for c in result.columns if "_" in c and c not in non_numeric
         ]
         assert len(categorical_cols) > 0
 
@@ -169,10 +170,32 @@ class TestPrepareFeatures:
             }
         )
         result = prepare_features(df)
-        # All categoricals should have been filled, resulting in one-hot columns
-        # with "Unknown" as a category
+        # Categoricals filled with "Unknown" → one-hot columns contain "Unknown"
         unknown_cols = [c for c in result.columns if "Unknown" in c]
         assert len(unknown_cols) > 0
+
+    def test_different_inputs_produce_different_encodings(self):
+        """Different categorical values produce distinct one-hot encodings."""
+        base = {
+            "YearsCode": [5.0],
+            "WorkExp": [3.0],
+            "EdLevel": ["Other"],
+            "DevType": ["Developer, back-end"],
+            "Industry": ["Software Development"],
+            "Age": ["25-34 years old"],
+            "ICorPM": ["Individual contributor"],
+            "OrgSize": ["20 to 99 employees"],
+        }
+        df_usa = pd.DataFrame({"Country": ["United States of America"], **base})
+        df_deu = pd.DataFrame({"Country": ["Germany"], **base})
+
+        enc_usa = prepare_features(df_usa)
+        enc_deu = prepare_features(df_deu)
+
+        assert not enc_usa.equals(enc_deu), (
+            "USA and Germany inputs produced identical encodings — "
+            "categorical features are not being encoded"
+        )
 
     def test_does_not_modify_original(self):
         """prepare_features does not modify the input DataFrame."""

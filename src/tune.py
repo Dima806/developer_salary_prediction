@@ -148,6 +148,7 @@ def main():
             "Industry",
             "Age",
             "ICorPM",
+            "OrgSize",
             "Currency",
             "CompTotal",
             "ConvertedCompYearly",

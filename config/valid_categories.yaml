@@ -1,9 +1,13 @@
 Country:
+- Argentina
 - Australia
 - Austria
+- Bangladesh
 - Belgium
 - Brazil
+- Bulgaria
 - Canada
+- Colombia
 - Czech Republic
 - Denmark
 - Finland
@@ -12,15 +16,19 @@ Country:
 - Greece
 - Hungary
 - India
+- Ireland
 - Israel
 - Italy
+- Japan
 - Mexico
 - Netherlands
 - New Zealand
 - Norway
+- Pakistan
 - Poland
 - Portugal
 - Romania
+- Russian Federation
 - South Africa
 - Spain
 - Sweden
@@ -34,7 +42,6 @@ EdLevel:
 - Bachelor's degree (B.A., B.S., B.Eng., etc.)
 - Master's degree (M.A., M.S., M.Eng., MBA, etc.)
 - Other
-- Primary/elementary school
 - Professional degree (JD, MD, Ph.D, Ed.D, etc.)
 - Secondary school (e.g. American high school, German Realschule or Gymnasium, etc.)
 - Some college/university study without earning a degree
@@ -48,9 +55,7 @@ DevType:
 - Data engineer
 - Data or business analyst
 - Data scientist
-- Database administrator or engineer
 - DevOps engineer or professional
-- Developer, AI apps or physical AI
 - Developer, QA or test
 - Developer, back-end
 - Developer, desktop or enterprise applications
@@ -63,7 +68,6 @@ DevType:
 - Founder, technology or otherwise
 - Product manager
 - Project manager
-- Retired
 - Senior executive (C-suite, VP, etc.)
 - Student
 - Support engineer or analyst

@@ -1,4 +1,5 @@
-.PHONY: lint format test coverage complexity maintainability audit security tune check all
+.PHONY: lint format test coverage complexity maintainability audit security \
+        tune pre-process train app smoke-test guardrails check all
 
 lint:
 	uv run ruff check .
@@ -21,12 +22,38 @@ maintainability:
 audit:
 	uv run pip-audit
 
+# --severity-level medium: only MEDIUM/HIGH severity fails the build.
+# LOW severity findings (e.g. B403 pickle import) are suppressed
+# regardless of their confidence level.
 security:
-	uv run bandit -r . -x ./.venv,./tests -ll
+	uv run bandit -r . -x ./.venv,./tests --severity-level medium
 
 tune:
 	uv run python -m src.tune
 
+# Requires data/survey_results_public.csv
+# Validates columns, filters salaries, reduces cardinality, and writes
+# config/valid_categories.yaml and config/currency_rates.yaml
+pre-process:
+	uv run python -m src.preprocess
+
+# Requires data/survey_results_public.csv (run pre-process first)
+train:
+	uv run python -m src.train
+
+# Requires a trained model (run `make train` first)
+app:
+	uv run streamlit run app.py
+
+smoke-test:
+	uv run python example_inference.py
+
+# Requires training data and a trained model
+guardrails:
+	uv run python guardrail_evaluation.py
+
+# CI gate: fast checks that require no model or training data
 check: lint test complexity maintainability audit security
 
-all: check
+# Complete workflow: quality checks → pre-process data → train → evaluate
+all: format lint test coverage complexity maintainability audit security pre-process train smoke-test guardrails

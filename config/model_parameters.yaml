@@ -1,14 +1,14 @@
 data:
   min_salary: 1000
-  lower_percentile: 1
-  upper_percentile: 99
+  lower_percentile: 2
+  upper_percentile: 98
   salary_scale: 0.001
   test_size: 0.2
   random_state: 42
 features:
   cardinality:
-    max_categories: 30
-    min_frequency: 50
+    max_categories: 50
+    min_frequency: 100
     other_category: Other
     drop_other_from:
     - Country
@@ -21,17 +21,17 @@ features:
     drop_first: true
 model:
   n_estimators: 5000
-  learning_rate: 0.038748205464460075
-  max_depth: 3
-  min_child_weight: 13
+  learning_rate: 0.020926294479210576
+  max_depth: 5
+  min_child_weight: 18
   random_state: 42
   n_jobs: -1
   early_stopping_rounds: 50
-  subsample: 0.9005941576389449
-  colsample_bytree: 0.6523775485743067
-  reg_alpha: 0.056985877244299196
-  reg_lambda: 0.00027538312197632507
-  gamma: 3.915581947997305
+  subsample: 0.9191289771331972
+  colsample_bytree: 0.5333460923651799
+  reg_alpha: 0.00021933676399241674
+  reg_lambda: 1.6854320949984984
+  gamma: 3.8247794752407254
 training:
   verbose: false
   save_model: true
