@@ -15,6 +15,7 @@ def test_years_experience_impact():
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
         "org_size": "20 to 99 employees",
+        "employment": "Employed",
     }
 
     years_tests = [0, 2, 5, 10, 20]
@@ -24,7 +25,7 @@ def test_years_experience_impact():
         predictions.append(predict_salary(input_data))
 
     assert len(set(predictions)) == len(predictions), (
-        f"Expected {len(predictions)} unique predictions, got {len(set(predictions))}"
+        f"Expected {len(predictions)} unique, got {len(set(predictions))}"
     )
 
 
@@ -39,6 +40,7 @@ def test_country_impact():
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
         "org_size": "20 to 99 employees",
+        "employment": "Employed",
     }
 
     test_countries = [
@@ -59,7 +61,7 @@ def test_country_impact():
         predictions.append(predict_salary(input_data))
 
     assert len(set(predictions)) == len(predictions), (
-        f"Expected {len(predictions)} unique predictions, got {len(set(predictions))}"
+        f"Expected {len(predictions)} unique, got {len(set(predictions))}"
     )
 
 
@@ -74,6 +76,7 @@ def test_education_impact():
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
         "org_size": "20 to 99 employees",
+        "employment": "Employed",
     }
 
     test_education = [
@@ -96,7 +99,7 @@ def test_education_impact():
         predictions.append(predict_salary(input_data))
 
     assert len(set(predictions)) == len(predictions), (
-        f"Expected {len(predictions)} unique predictions, got {len(set(predictions))}"
+        f"Expected {len(predictions)} unique, got {len(set(predictions))}"
     )
 
 
@@ -111,6 +114,7 @@ def test_devtype_impact():
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
         "org_size": "20 to 99 employees",
+        "employment": "Employed",
     }
 
     test_devtypes = [
@@ -132,7 +136,7 @@ def test_devtype_impact():
         predictions.append(predict_salary(input_data))
 
     assert len(set(predictions)) == len(predictions), (
-        f"Expected {len(predictions)} unique predictions, got {len(set(predictions))}"
+        f"Expected {len(predictions)} unique, got {len(set(predictions))}"
     )
 
 
@@ -147,6 +151,7 @@ def test_industry_impact():
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
         "org_size": "20 to 99 employees",
+        "employment": "Employed",
     }
 
     test_industries = [
@@ -168,7 +173,7 @@ def test_industry_impact():
         predictions.append(predict_salary(input_data))
 
     assert len(set(predictions)) == len(predictions), (
-        f"Expected {len(predictions)} unique predictions, got {len(set(predictions))}"
+        f"Expected {len(predictions)} unique, got {len(set(predictions))}"
     )
 
 
@@ -183,6 +188,7 @@ def test_age_impact():
         "industry": "Software Development",
         "ic_or_pm": "Individual contributor",
         "org_size": "20 to 99 employees",
+        "employment": "Employed",
     }
 
     test_ages = [
@@ -203,7 +209,7 @@ def test_age_impact():
         predictions.append(predict_salary(input_data))
 
     assert len(set(predictions)) == len(predictions), (
-        f"Expected {len(predictions)} unique predictions, got {len(set(predictions))}"
+        f"Expected {len(predictions)} unique, got {len(set(predictions))}"
     )
 
 
@@ -218,6 +224,7 @@ def test_work_exp_impact():
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
         "org_size": "20 to 99 employees",
+        "employment": "Employed",
     }
 
     work_exp_tests = [0, 1, 3, 5, 10, 20]
@@ -243,6 +250,7 @@ def test_icorpm_impact():
         "industry": "Software Development",
         "age": "25-34 years old",
         "org_size": "20 to 99 employees",
+        "employment": "Employed",
     }
 
     test_icorpm = [
@@ -257,7 +265,7 @@ def test_icorpm_impact():
         predictions.append(predict_salary(input_data))
 
     assert len(set(predictions)) == len(predictions), (
-        f"Expected {len(predictions)} unique predictions, got {len(set(predictions))}"
+        f"Expected {len(predictions)} unique, got {len(set(predictions))}"
     )
 
 
@@ -272,6 +280,7 @@ def test_org_size_impact():
         "industry": "Software Development",
         "age": "25-34 years old",
         "ic_or_pm": "Individual contributor",
+        "employment": "Employed",
     }
 
     test_org_sizes = valid_categories["OrgSize"][:5]
@@ -282,7 +291,7 @@ def test_org_size_impact():
         predictions.append(predict_salary(input_data))
 
     assert len(set(predictions)) == len(predictions), (
-        f"Expected {len(predictions)} unique predictions, got {len(set(predictions))}"
+        f"Expected {len(predictions)} unique, got {len(set(predictions))}"
     )
 
 
@@ -379,9 +388,10 @@ def test_combined_features():
             age=age,
             ic_or_pm=icorpm,
             org_size=org_size,
+            employment="Employed",
         )
         predictions.append(predict_salary(input_data))
 
     assert len(set(predictions)) == len(predictions), (
-        f"Expected {len(predictions)} unique predictions, got {len(set(predictions))}"
+        f"Expected {len(predictions)} unique, got {len(set(predictions))}"
     )

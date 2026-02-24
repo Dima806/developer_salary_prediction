@@ -19,6 +19,7 @@ class SalaryInput(BaseModel):
                     "age": "25-34 years old",
                     "ic_or_pm": "Individual contributor",
                     "org_size": "20 to 99 employees",
+                    "employment": "Employed",
                 }
             ]
         }
@@ -43,3 +44,4 @@ class SalaryInput(BaseModel):
     org_size: str = Field(
         ..., description="Size of the organisation the developer works for"
     )
+    employment: str = Field(..., description="Current employment status")

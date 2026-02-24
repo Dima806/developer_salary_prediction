@@ -1,5 +1,5 @@
 .PHONY: lint format test coverage complexity maintainability audit security \
-        tune pre-process train app smoke-test guardrails check all
+        tune pre-process train app smoke-test guardrails check ci pre-commit all
 
 lint:
 	uv run ruff check .
@@ -51,6 +51,13 @@ smoke-test:
 # Requires training data and a trained model
 guardrails:
 	uv run python guardrail_evaluation.py
+
+# Mirrors GitHub Actions CI (.github/workflows/ci.yml): lint + test
+ci: lint test
+
+# Runs all pre-commit hooks against every file (.pre-commit-config.yaml)
+pre-commit:
+	uv run pre-commit run --all-files
 
 # CI gate: fast checks that require no model or training data
 check: lint test complexity maintainability audit security

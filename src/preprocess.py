@@ -35,6 +35,7 @@ REQUIRED_COLUMNS = [
     "Age",
     "ICorPM",
     "OrgSize",
+    "Employment",
     "Currency",
     "CompTotal",
     "ConvertedCompYearly",

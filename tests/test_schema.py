@@ -46,6 +46,7 @@ def test_missing_country():
             age="25-34 years old",
             ic_or_pm="Individual contributor",
             org_size="20 to 99 employees",
+            employment="Employed",
         )
 
 
@@ -61,6 +62,7 @@ def test_missing_education_level():
             age="25-34 years old",
             ic_or_pm="Individual contributor",
             org_size="20 to 99 employees",
+            employment="Employed",
         )
 
 
@@ -76,6 +78,7 @@ def test_missing_org_size():
             industry="Software Development",
             age="25-34 years old",
             ic_or_pm="Individual contributor",
+            employment="Employed",
         )
 
 

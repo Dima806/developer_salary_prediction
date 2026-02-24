@@ -35,6 +35,7 @@ def _make_salary_df(countries=None, salaries=None, n=100) -> pd.DataFrame:
             "Age": ["25-34 years old"] * n,
             "ICorPM": ["Individual contributor"] * n,
             "OrgSize": ["20 to 99 employees"] * n,
+            "Employment": ["Employed"] * n,
             "Currency": ["USD United States Dollar"] * n,
             "CompTotal": salaries,
             "ConvertedCompYearly": salaries,
@@ -142,6 +143,7 @@ class TestDropOtherRows:
                 "Age": ["25-34", "25-34", "25-34"],
                 "ICorPM": ["IC", "IC", "IC"],
                 "OrgSize": ["Small", "Small", "Small"],
+                "Employment": ["FT", "FT", "FT"],
             }
         )
         config = {
@@ -167,6 +169,7 @@ class TestDropOtherRows:
                 "Age": ["25-34", "25-34"],
                 "ICorPM": ["IC", "IC"],
                 "OrgSize": ["Small", "Small"],
+                "Employment": ["FT", "FT"],
             }
         )
         config = {
@@ -191,6 +194,7 @@ class TestDropOtherRows:
                 "Age": ["25-34", "25-34"],
                 "ICorPM": ["IC", "IC"],
                 "OrgSize": ["Small", "Small"],
+                "Employment": ["FT", "FT"],
             }
         )
         config = {
@@ -219,6 +223,7 @@ class TestExtractValidCategories:
                 "Age": ["25-34", "35-44", "25-34"],
                 "ICorPM": ["IC", "PM", "IC"],
                 "OrgSize": ["Small", "Large", "Small"],
+                "Employment": ["FT", "PT", "FT"],
             }
         )
         result = extract_valid_categories(df)
@@ -226,9 +231,10 @@ class TestExtractValidCategories:
         assert result["EdLevel"] == ["BS", "MS"]
         assert result["ICorPM"] == ["IC", "PM"]
         assert result["OrgSize"] == ["Large", "Small"]
+        assert result["Employment"] == ["FT", "PT"]
 
     def test_all_categorical_features_present(self):
-        """All 7 categorical features are present as keys."""
+        """All 8 categorical features are present as keys."""
         df = pd.DataFrame(
             {
                 "Country": ["USA"],
@@ -238,6 +244,7 @@ class TestExtractValidCategories:
                 "Age": ["25-34"],
                 "ICorPM": ["IC"],
                 "OrgSize": ["Small"],
+                "Employment": ["FT"],
             }
         )
         result = extract_valid_categories(df)
@@ -249,6 +256,7 @@ class TestExtractValidCategories:
             "Age",
             "ICorPM",
             "OrgSize",
+            "Employment",
         }
 
     def test_excludes_nan_values(self):
@@ -262,6 +270,7 @@ class TestExtractValidCategories:
                 "Age": ["25-34", "25-34"],
                 "ICorPM": ["IC", "IC"],
                 "OrgSize": ["Small", "Small"],
+                "Employment": ["FT", "FT"],
             }
         )
         result = extract_valid_categories(df)

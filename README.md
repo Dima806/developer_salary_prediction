@@ -45,7 +45,7 @@ Download the Stack Overflow Developer Survey CSV file:
    data/survey_results_public.csv
    ```
 
-**Required columns:** `Country`, `YearsCode`, `WorkExp`, `EdLevel`, `DevType`, `Industry`, `Age`, `ICorPM`, `OrgSize`, `ConvertedCompYearly`
+**Required columns:** `Country`, `YearsCode`, `WorkExp`, `EdLevel`, `DevType`, `Industry`, `Age`, `ICorPM`, `OrgSize`, `Employment`, `ConvertedCompYearly`
 
 ### 3. Train the Model
 
@@ -109,6 +109,8 @@ This runs all quality gates in sequence:
 
 | Target | Tool | What it checks |
 | ------ | ---- | -------------- |
+| `make ci` | ruff + pytest | Mirrors GitHub Actions CI (lint + test) |
+| `make pre-commit` | pre-commit | All hooks from `.pre-commit-config.yaml` against every file |
 | `make lint` | ruff | Style and linting errors |
 | `make format` | ruff | Auto-formats code |
 | `make test` | pytest | Unit and integration tests |
@@ -142,6 +144,7 @@ Launch the Streamlit app and enter:
 - **Age**: Developer's age range
 - **IC or PM**: Individual contributor or people manager
 - **Organization Size**: Approximate number of employees at the developer's company
+- **Employment Status**: Current employment status
 
 Click "Predict Salary" to see the estimated annual salary in USD plus a local
 currency equivalent where available.
@@ -162,6 +165,7 @@ input_data = SalaryInput(
     age="25-34 years old",
     ic_or_pm="Individual contributor",
     org_size="20 to 99 employees",
+    employment="Employed",
 )
 
 salary = predict_salary(input_data)
@@ -182,7 +186,7 @@ Validation is enforced at two layers:
 
 Checked at object construction time:
 
-- All 9 fields are required
+- All 10 fields are required
 - `years_code` must be `>= 0`
 - `work_exp` must be `>= 0`
 
@@ -200,6 +204,7 @@ in `config/model_parameters.yaml`):
 - **Valid Age Ranges** (~7) — `Other` dropped
 - **Valid IC/PM Values** (~3) — `Other` dropped
 - **Valid Organization Sizes** (~8) — `Other` dropped
+- **Valid Employment Statuses** (~5)
 
 Passing an invalid value raises a `ValueError` with a message pointing to
 `config/valid_categories.yaml`.

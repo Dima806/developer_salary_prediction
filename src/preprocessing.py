@@ -79,7 +79,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
 
     Args:
         df: DataFrame with columns: Country, YearsCode, WorkExp, EdLevel,
-            DevType, Industry, Age, ICorPM, OrgSize.
+            DevType, Industry, Age, ICorPM, OrgSize, Employment.
             NOTE: During training, cardinality reduction should be applied to df
             BEFORE calling this function. During inference, valid_categories.yaml
             ensures only valid (already-reduced) categories are used.
@@ -107,6 +107,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
         "Age",
         "ICorPM",
         "OrgSize",
+        "Employment",
     ]
     for col in _categorical_cols:
         if col in df_processed.columns:
@@ -136,6 +137,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
     df_processed["Age"] = df_processed["Age"].fillna("Unknown")
     df_processed["ICorPM"] = df_processed["ICorPM"].fillna("Unknown")
     df_processed["OrgSize"] = df_processed["OrgSize"].fillna("Unknown")
+    df_processed["Employment"] = df_processed["Employment"].fillna("Unknown")
 
     # NOTE: Cardinality reduction is NOT applied here
     # It should be applied during training BEFORE calling this function
@@ -152,6 +154,7 @@ def prepare_features(df: pd.DataFrame) -> pd.DataFrame:
         "Age",
         "ICorPM",
         "OrgSize",
+        "Employment",
     ]
     df_features = df_processed[feature_cols]
 

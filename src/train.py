@@ -19,6 +19,7 @@ CATEGORICAL_FEATURES = [
     "Age",
     "ICorPM",
     "OrgSize",
+    "Employment",
 ]
 
 
@@ -169,6 +170,7 @@ def main():
             "Age",
             "ICorPM",
             "OrgSize",
+            "Employment",
             "Currency",
             "CompTotal",
             "ConvertedCompYearly",
@@ -278,6 +280,12 @@ def main():
     top_icorpm = df["ICorPM"].value_counts().head(10)
     for icorpm, count in top_icorpm.items():
         print(f"  - {icorpm}: {count:,} ({count / len(df) * 100:.1f}%)")
+
+    # Show employment distribution
+    print("\n💼 Employment Distribution:")
+    top_employment = df["Employment"].value_counts()
+    for emp, count in top_employment.items():
+        print(f"  - {emp}: {count:,} ({count / len(df) * 100:.1f}%)")
 
     # Show YearsCode statistics
     print("\n💼 Years of Coding Experience:")

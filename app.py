@@ -34,6 +34,7 @@ with st.sidebar:
         - Age
         - Individual contributor or people manager
         - Organization size
+        - Employment status
         """
     )
     st.info("💡 Tip: Results are estimates based on survey averages.")
@@ -47,6 +48,7 @@ with st.sidebar:
     st.write(f"**Age Ranges:** {len(valid_categories['Age'])} available")
     st.write(f"**IC/PM Roles:** {len(valid_categories['ICorPM'])} available")
     st.write(f"**Org Sizes:** {len(valid_categories['OrgSize'])} available")
+    st.write(f"**Employment:** {len(valid_categories['Employment'])} available")
     st.caption("Only values from the training data are shown in the dropdowns.")
 
 # Main input form
@@ -62,6 +64,7 @@ valid_industries = valid_categories["Industry"]
 valid_ages = valid_categories["Age"]
 valid_icorpm = valid_categories["ICorPM"]
 valid_org_sizes = valid_categories["OrgSize"]
+valid_employment = valid_categories["Employment"]
 
 # Set default values (if available)
 default_country = (
@@ -94,6 +97,9 @@ default_org_size = (
     "20 to 99 employees"
     if "20 to 99 employees" in valid_org_sizes
     else valid_org_sizes[0]
+)
+default_employment = (
+    "Employed" if "Employed" in valid_employment else valid_employment[0]
 )
 
 with col1:
@@ -165,6 +171,13 @@ org_size = st.selectbox(
     help="Approximate number of employees at the developer's company",
 )
 
+employment = st.selectbox(
+    "Employment Status",
+    options=valid_employment,
+    index=valid_employment.index(default_employment),
+    help="Current employment status",
+)
+
 # Prediction button
 if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
     try:
@@ -179,6 +192,7 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
             age=age,
             ic_or_pm=ic_or_pm,
             org_size=org_size,
+            employment=employment,
         )
 
         # Make prediction

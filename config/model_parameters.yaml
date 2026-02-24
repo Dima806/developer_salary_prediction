@@ -17,21 +17,22 @@ features:
     - Age
     - ICorPM
     - OrgSize
+    - Employment
   encoding:
     drop_first: true
 model:
   n_estimators: 5000
-  learning_rate: 0.020926294479210576
-  max_depth: 5
-  min_child_weight: 18
+  learning_rate: 0.056803456466335424
+  max_depth: 4
+  min_child_weight: 16
   random_state: 42
   n_jobs: -1
   early_stopping_rounds: 50
-  subsample: 0.9191289771331972
-  colsample_bytree: 0.5333460923651799
-  reg_alpha: 0.00021933676399241674
-  reg_lambda: 1.6854320949984984
-  gamma: 3.8247794752407254
+  subsample: 0.9378495066287903
+  colsample_bytree: 0.589604213410477
+  reg_alpha: 1.2493619591455039
+  reg_lambda: 0.006641605590505938
+  gamma: 1.269496538435438
 training:
   verbose: false
   save_model: true

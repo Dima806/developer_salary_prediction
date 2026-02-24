@@ -87,6 +87,7 @@ class TestPrepareFeatures:
                 "Age": ["25-34 years old"],
                 "ICorPM": ["Individual contributor"],
                 "OrgSize": ["20 to 99 employees"],
+                "Employment": ["Employed"],
             }
         )
         result = prepare_features(df)
@@ -106,6 +107,7 @@ class TestPrepareFeatures:
                 "Age": ["25-34 years old"],
                 "ICorPM": ["Individual contributor"],
                 "OrgSize": ["20 to 99 employees"],
+                "Employment": ["Employed"],
             }
         )
         result = prepare_features(df)
@@ -125,6 +127,7 @@ class TestPrepareFeatures:
                 "Age": ["25-34 years old", "35-44 years old"],
                 "ICorPM": ["Individual contributor", "People manager"],
                 "OrgSize": ["20 to 99 employees", "100 to 499 employees"],
+                "Employment": ["Employed", "Employed"],
             }
         )
         result = prepare_features(df)
@@ -148,6 +151,7 @@ class TestPrepareFeatures:
                 "Age": ["25-34 years old"],
                 "ICorPM": ["Individual contributor"],
                 "OrgSize": ["20 to 99 employees"],
+                "Employment": ["Employed"],
             }
         )
         result = prepare_features(df)
@@ -167,10 +171,11 @@ class TestPrepareFeatures:
                 "Age": [None],
                 "ICorPM": [None],
                 "OrgSize": [None],
+                "Employment": [None],
             }
         )
         result = prepare_features(df)
-        # Categoricals filled with "Unknown" → one-hot columns contain "Unknown"
+        # Categoricals filled with "Unknown" → one-hot encodes "Unknown"
         unknown_cols = [c for c in result.columns if "Unknown" in c]
         assert len(unknown_cols) > 0
 
@@ -185,6 +190,7 @@ class TestPrepareFeatures:
             "Age": ["25-34 years old"],
             "ICorPM": ["Individual contributor"],
             "OrgSize": ["20 to 99 employees"],
+            "Employment": ["Employed"],
         }
         df_usa = pd.DataFrame({"Country": ["United States of America"], **base})
         df_deu = pd.DataFrame({"Country": ["Germany"], **base})
@@ -210,6 +216,7 @@ class TestPrepareFeatures:
                 "Age": ["25-34 years old"],
                 "ICorPM": ["Individual contributor"],
                 "OrgSize": ["20 to 99 employees"],
+                "Employment": ["Employed"],
             }
         )
         original_country = df["Country"].iloc[0]
