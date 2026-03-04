@@ -67,8 +67,8 @@ clarity and simplicity over production completeness.
 # Install dependencies
 uv sync
 
-# Install pre-commit hooks (once, after cloning)
-uv run pre-commit install
+# Install prek and git hooks (once, after cloning)
+uv tool install prek && prek install
 ```
 
 ## Key Workflows
@@ -96,7 +96,7 @@ make check   # lint + test + complexity + maintainability + audit + security
 | `make pre-process` | Validate data + generate config artifacts (no model) |
 | `make tune` | Optuna hyperparameter search |
 | `make ci` | Mirror of GitHub Actions CI (lint + test) |
-| `make pre-commit` | Run all pre-commit hooks against every file |
+| `make pre-commit` | Run all hooks via prek (`prek run --all-files`) |
 
 ### Training the model
 

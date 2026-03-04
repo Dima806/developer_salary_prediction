@@ -110,7 +110,7 @@ This runs all quality gates in sequence:
 | Target | Tool | What it checks |
 | ------ | ---- | -------------- |
 | `make ci` | ruff + pytest | Mirrors GitHub Actions CI (lint + test) |
-| `make pre-commit` | pre-commit | All hooks from `.pre-commit-config.yaml` against every file |
+| `make pre-commit` | prek | All hooks from `.pre-commit-config.yaml` against every file |
 | `make lint` | ruff | Style and linting errors |
 | `make format` | ruff | Auto-formats code |
 | `make test` | pytest | Unit and integration tests |
@@ -358,7 +358,7 @@ For detailed development information, see [Claude.md](Claude.md).
 
 #### Pre-commit hooks
 
-The project uses [pre-commit](https://pre-commit.com) to enforce code quality checks before each commit. Hooks are defined in [.pre-commit-config.yaml](.pre-commit-config.yaml) and run:
+The project uses [prek](https://github.com/nickel-lang/prek) to enforce code quality checks before each commit. Hooks are defined in [.pre-commit-config.yaml](.pre-commit-config.yaml) and run:
 
 - **ruff format** — auto-formats Python files (`make format`)
 - **ruff lint** — checks for linting errors (`make lint`)
@@ -367,13 +367,13 @@ The project uses [pre-commit](https://pre-commit.com) to enforce code quality ch
 **Install hooks** (once, after cloning):
 
 ```bash
-uv run pre-commit install
+uv tool install prek && prek install
 ```
 
 Hooks will then run automatically on every `git commit`. To run them manually against all files:
 
 ```bash
-uv run pre-commit run --all-files
+make pre-commit
 ```
 
 #### GitHub Actions CI

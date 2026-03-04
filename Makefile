@@ -56,8 +56,9 @@ guardrails:
 ci: lint test
 
 # Runs all pre-commit hooks against every file (.pre-commit-config.yaml)
+# Setup: uv tool install prek && prek install
 pre-commit:
-	uv run pre-commit run --all-files
+	prek run --all-files
 
 # CI gate: fast checks that require no model or training data
 check: lint test complexity maintainability audit security
