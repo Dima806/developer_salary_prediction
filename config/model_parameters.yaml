@@ -22,17 +22,17 @@ features:
     drop_first: true
 model:
   n_estimators: 5000
-  learning_rate: 0.056803456466335424
+  learning_rate: 0.023045198544870596
   max_depth: 4
   min_child_weight: 16
   random_state: 42
   n_jobs: -1
   early_stopping_rounds: 50
-  subsample: 0.9378495066287903
-  colsample_bytree: 0.589604213410477
-  reg_alpha: 1.2493619591455039
-  reg_lambda: 0.006641605590505938
-  gamma: 1.269496538435438
+  subsample: 0.9979763430470896
+  colsample_bytree: 0.7341672321169792
+  reg_alpha: 0.10279490840973991
+  reg_lambda: 1.9799853115073398
+  gamma: 2.809228604965898
 training:
   verbose: false
   save_model: true

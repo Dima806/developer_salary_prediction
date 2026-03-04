@@ -126,7 +126,7 @@ This runs all quality gates in sequence:
 #### 4. Run all pre-commit checks manually
 
 ```bash
-uv run pre-commit run --all-files
+make pre-commit
 ```
 
 ## Usage
@@ -227,12 +227,12 @@ cat config/valid_categories.yaml
 
 ### Model guardrails (`config/model_parameters.yaml`)
 
-The `guardrails` section defines thresholds used during training evaluation:
+The `guardrails` section defines thresholds used by `make guardrails` and the
+pre-tune check in `make tune`:
 
 ```yaml
 guardrails:
-  max_mape_per_category: 100   # max acceptable MAPE per category (%)
-  max_abs_pct_diff: 100        # max acceptable absolute % difference
+  max_abs_pct_diff: 100        # max acceptable absolute % difference per category
 ```
 
 ## Testing

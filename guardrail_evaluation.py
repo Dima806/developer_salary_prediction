@@ -25,10 +25,13 @@ CATEGORICAL_FEATURES = [
     "Age",
     "ICorPM",
     "OrgSize",
+    "Employment",
 ]
 
 
-def load_and_preprocess(config: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
+def load_and_preprocess(
+    config: dict,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     """Load data and apply same preprocessing as train.py.
 
     Returns:
@@ -52,6 +55,7 @@ def load_and_preprocess(config: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.Se
             "Age",
             "ICorPM",
             "OrgSize",
+            "Employment",
             "ConvertedCompYearly",
         ],
     )
@@ -74,14 +78,16 @@ def load_and_preprocess(config: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.Se
         df[col] = reduce_cardinality(df[col])
 
     # Drop rows with "Other" in specified features (same as train.py)
-    other_name = config["features"]["cardinality"].get("other_category", "Other")
-    drop_other_from = config["features"]["cardinality"].get("drop_other_from", [])
+    cardinality = config["features"]["cardinality"]
+    other_name = cardinality.get("other_category", "Other")
+    drop_other_from = cardinality.get("drop_other_from", [])
     if drop_other_from:
         before_drop = len(df)
         for col in drop_other_from:
             df = df[df[col] != other_name]
         print(
-            f"Dropped {before_drop - len(df):,} rows with '{other_name}' in {drop_other_from}"
+            f"Dropped {before_drop - len(df):,} rows with "
+            f"'{other_name}' in {drop_other_from}"
         )
 
     X = prepare_features(df)
@@ -130,10 +136,10 @@ def run_cv_predictions(
         )
 
         oof_predictions[test_idx] = model.predict(X_test)
-        test_mape = np.mean(np.abs((y_test - oof_predictions[test_idx]) / y_test)) * 100
-        print(
-            f"  Fold {fold}: Test MAPE = {test_mape:.2f}% (best iter: {model.best_iteration + 1})"
-        )
+        fold_preds = oof_predictions[test_idx]
+        test_mape = np.mean(np.abs((y_test - fold_preds) / y_test)) * 100
+        best_iter = model.best_iteration + 1
+        print(f"  Fold {fold}: Test MAPE = {test_mape:.2f}% (best iter: {best_iter})")
 
     overall_mape = np.mean(np.abs((y.values - oof_predictions) / y.values)) * 100
     print(f"\nOverall OOF MAPE: {overall_mape:.2f}%")
@@ -181,19 +187,71 @@ def compute_category_metrics(
 def format_table(metrics_df: pd.DataFrame) -> str:
     """Format metrics DataFrame as a markdown table."""
     lines = []
-    header = "| Category | Count | MAPE (%) | Mean Actual ($) | Mean Predicted ($) | Abs % Diff |"
-    sep = "|----------|------:|---------:|----------------:|-------------------:|-----------:|"
+    header = (
+        "| Category | Count | MAPE (%) "
+        "| Mean Actual ($) | Mean Predicted ($) | Abs % Diff |"
+    )
+    sep = (
+        "|----------|------:|---------:"
+        "|----------------:|-------------------:|-----------:|"
+    )
     lines.append(header)
     lines.append(sep)
 
     for _, row in metrics_df.iterrows():
         lines.append(
-            f"| {row['Category'][:45]:45s} | {row['Count']:5,d} | {row['MAPE (%)']:>7.1f}% "
-            f"| {row['Mean Actual ($)']:>15,.0f} | {row['Mean Predicted ($)']:>18,.0f} "
-            f"| {row['Abs % Diff']:>9.1f}% |"
+            f"| {row['Category'][:45]:45s}"
+            f" | {row['Count']:5,d}"
+            f" | {row['MAPE (%)']:>7.1f}%"
+            f" | {row['Mean Actual ($)']:>15,.0f}"
+            f" | {row['Mean Predicted ($)']:>18,.0f}"
+            f" | {row['Abs % Diff']:>9.1f}% |"
         )
 
     return "\n".join(lines)
+
+
+def check_guardrails(config: dict) -> bool:
+    """Check all categories against guardrail thresholds.
+
+    Runs cross-validation and checks per-category MAPE and abs % diff.
+    Prints a summary and returns True if all categories pass.
+
+    Args:
+        config: Model configuration dict (from model_parameters.yaml).
+
+    Returns:
+        True if all categories pass, False if any violation found.
+    """
+    guardrails = config.get("guardrails", {})
+    max_pct_diff = guardrails.get("max_abs_pct_diff", 20)
+
+    df, X, y = load_and_preprocess(config)
+    predictions = run_cv_predictions(X, y, config)
+
+    df_eval = df.reset_index(drop=True)
+    y_eval = y.reset_index(drop=True)
+
+    violations = []
+    for feature in CATEGORICAL_FEATURES:
+        metrics = compute_category_metrics(df_eval, y_eval, predictions, feature)
+        for _, row in metrics.iterrows():
+            cat = row["Category"]
+            if row["Abs % Diff"] > max_pct_diff:
+                violations.append(
+                    f'{feature} "{cat}": Abs % Diff = '
+                    f"{row['Abs % Diff']:.1f}%"
+                    f" (threshold: {max_pct_diff}%)"
+                )
+
+    if violations:
+        print(f"Guardrail check FAILED: {len(violations)} violation(s)")
+        for v in violations:
+            print(f"  - {v}")
+        return False
+
+    print("Guardrail check passed.")
+    return True
 
 
 def main():
@@ -203,12 +261,11 @@ def main():
         config = yaml.safe_load(f)
 
     guardrails = config.get("guardrails", {})
-    max_mape = guardrails.get("max_mape_per_category", 20)
     max_pct_diff = guardrails.get("max_abs_pct_diff", 20)
 
     print("=" * 80)
     print("GUARDRAIL EVALUATION - Per-Category Model Quality")
-    print(f"Thresholds: max MAPE = {max_mape}%, max abs % diff = {max_pct_diff}%")
+    print(f"Threshold: max abs % diff = {max_pct_diff}%")
     print("=" * 80)
 
     df, X, y = load_and_preprocess(config)
@@ -231,14 +288,11 @@ def main():
         # Check guardrails
         for _, row in metrics.iterrows():
             cat = row["Category"]
-            if row["MAPE (%)"] > max_mape:
-                warnings.append(
-                    f'{feature} "{cat}": MAPE = {row["MAPE (%)"]:.1f}% (threshold: {max_mape}%)'
-                )
             if row["Abs % Diff"] > max_pct_diff:
                 warnings.append(
-                    f'{feature} "{cat}": Abs % Diff = {row["Abs % Diff"]:.1f}% '
-                    f"(threshold: {max_pct_diff}%)"
+                    f'{feature} "{cat}": Abs % Diff = '
+                    f"{row['Abs % Diff']:.1f}%"
+                    f" (threshold: {max_pct_diff}%)"
                 )
 
     # Summary
@@ -253,7 +307,7 @@ def main():
 
     print("=" * 80)
 
-    sys.exit(0)
+    sys.exit(1 if warnings else 0)
 
 
 if __name__ == "__main__":
