@@ -31,13 +31,13 @@ security:
 tune:
 	uv run python -m src.tune
 
-# Requires data/survey_results_public.csv
+# Requires data/<year>/survey_results_public.csv for every year in data.sources
 # Validates columns, filters salaries, reduces cardinality, and writes
-# config/valid_categories.yaml and config/currency_rates.yaml
+# config/valid_categories.yaml and the per-year config/currency_rates*.yaml
 pre-process:
 	uv run python -m src.preprocess
 
-# Requires data/survey_results_public.csv (run pre-process first)
+# Requires data/<year>/survey_results_public.csv for every year in data.sources (run pre-process first)
 train:
 	uv run python -m src.train
 

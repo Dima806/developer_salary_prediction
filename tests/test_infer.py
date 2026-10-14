@@ -2,7 +2,8 @@
 
 import pytest
 
-from src.infer import get_local_currency, predict_salary
+import src.infer as infer
+from src.infer import get_local_currency, predict_salaries, predict_salary
 from src.schema import SalaryInput
 
 
@@ -78,3 +79,49 @@ def test_get_local_currency_known_country():
         assert "rate" in result
         assert "salary_local" in result
         assert isinstance(result["salary_local"], float)
+
+
+def test_invalid_survey_year(sample_salary_input):
+    """Unknown survey year raises ValueError."""
+    with pytest.raises(ValueError, match="Invalid survey year"):
+        predict_salary(SalaryInput(**sample_salary_input), survey_year="1999")
+
+
+def test_predict_salaries_returns_both_years(sample_salary_input):
+    """predict_salaries returns one positive USD value per survey year."""
+    data = SalaryInput(**sample_salary_input)
+    result = predict_salaries(data)
+    assert set(result) == {"2025", "2026"}
+    assert all(v > 0 for v in result.values())
+    assert result["2026"] == predict_salary(data, survey_year="2026")
+
+
+def test_predict_salary_defaults_to_2025(sample_salary_input):
+    """Calling without survey_year predicts for 2025 (backward compatible)."""
+    data = SalaryInput(**sample_salary_input)
+    assert predict_salary(data) == predict_salary(data, survey_year="2025")
+
+
+def test_get_local_currency_uses_year_rate(monkeypatch):
+    """Each survey year uses its own rate."""
+    rates = {
+        "2025": {"Germany": {"code": "EUR", "name": "Euro", "rate": 0.8}},
+        "2026": {"Germany": {"code": "EUR", "name": "Euro", "rate": 0.9}},
+    }
+    monkeypatch.setattr(infer, "currency_rates_by_year", rates)
+    assert get_local_currency("Germany", 100, "2025")["salary_local"] == 80.0
+    result = get_local_currency("Germany", 100, "2026")
+    assert result["salary_local"] == 90.0
+    assert result["rate_year"] == "2026"
+
+
+def test_get_local_currency_falls_back_to_other_year(monkeypatch):
+    """A country missing from one year's rates uses the other year's rate."""
+    rates = {
+        "2025": {"Germany": {"code": "EUR", "name": "Euro", "rate": 0.8}},
+        "2026": {},
+    }
+    monkeypatch.setattr(infer, "currency_rates_by_year", rates)
+    result = get_local_currency("Germany", 100, "2026")
+    assert result["rate"] == 0.8
+    assert result["rate_year"] == "2025"

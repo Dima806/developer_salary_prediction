@@ -2,8 +2,16 @@
 
 import streamlit as st
 
-from src.infer import predict_salary, get_local_currency, valid_categories
+from src.infer import predict_salaries, get_local_currency, valid_categories
 from src.schema import SalaryInput
+
+
+def pct_delta(new: float, old: float, base_year: str) -> str | None:
+    """Format the % change from old to new, or None if old is zero."""
+    if not old:
+        return None
+    return f"{(new / old - 1) * 100:+.1f}% vs {base_year}"
+
 
 # Page configuration
 st.set_page_config(
@@ -24,7 +32,8 @@ with st.sidebar:
     st.write(
         """
         This app uses an XGBoost (gradient boosting) model trained on Stack Overflow
-        Developer Survey data to predict annual salaries based on:
+        Developer Survey data (2025 + 2026 surveys) to predict annual
+        salaries based on:
         - Country
         - Total years of coding experience (including education)
         - Years of professional work experience
@@ -35,6 +44,7 @@ with st.sidebar:
         - Individual contributor or people manager
         - Organization size
         - Employment status
+        - Survey year (2025, 2026), both predicted automatically
         """
     )
     st.info("💡 Tip: Results are estimates based on survey averages.")
@@ -49,6 +59,7 @@ with st.sidebar:
     st.write(f"**IC/PM Roles:** {len(valid_categories['ICorPM'])} available")
     st.write(f"**Org Sizes:** {len(valid_categories['OrgSize'])} available")
     st.write(f"**Employment:** {len(valid_categories['Employment'])} available")
+    st.write(f"**Survey Years:** {', '.join(valid_categories['SurveyYear'])}")
     st.caption("Only values from the training data are shown in the dropdowns.")
 
 # Main input form
@@ -195,35 +206,69 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
             employment=employment,
         )
 
-        # Make prediction
+        # Make prediction for every survey year
         with st.spinner("Calculating prediction..."):
-            salary = predict_salary(input_data)
+            salaries = predict_salaries(input_data)
 
         # Display result
         st.success("Prediction Complete!")
 
-        # Show USD and local currency side by side
-        local = get_local_currency(country, salary)
-        if local and local["code"] != "USD":
-            col_usd, col_local = st.columns(2)
-            with col_usd:
+        # One column per survey year: USD and local currency (each year uses
+        # its own survey-derived rate); later years show % change vs the first
+        base_year = min(salaries)
+        base_usd = salaries[base_year]
+        base_local = get_local_currency(country, base_usd, survey_year=base_year)
+        year_columns = st.columns(len(salaries))
+        for year_column, (year, salary) in zip(year_columns, salaries.items()):
+            is_base = year == base_year
+            local = get_local_currency(country, salary, survey_year=year)
+            with year_column:
+                st.subheader(year)
                 st.metric(
                     label="Estimated Annual Salary (USD)",
                     value=f"${salary:,.0f}",
-                    help="Predicted annual compensation in USD",
+                    delta=None if is_base else pct_delta(salary, base_usd, base_year),
+                    help=f"Predicted annual compensation in USD ({year} survey)",
                 )
-            with col_local:
-                st.metric(
-                    label=f"Estimated Annual Salary ({local['code']})",
-                    value=f"{local['salary_local']:,.0f} {local['code']}",
-                    help=f"Converted using survey-derived rate: 1 USD = {local['rate']} {local['code']} ({local['name']})",
-                )
-        else:
-            st.metric(
-                label="Estimated Annual Salary",
-                value=f"${salary:,.0f}",
-                help="Predicted annual compensation in USD",
-            )
+                if local and local["code"] != "USD":
+                    # No % when the currency itself changed (e.g. BGN -> EUR)
+                    local_delta = None
+                    if (
+                        not is_base
+                        and base_local
+                        and base_local["code"] == local["code"]
+                    ):
+                        local_delta = pct_delta(
+                            local["salary_local"],
+                            base_local["salary_local"],
+                            base_year,
+                        )
+                    st.metric(
+                        label=f"Estimated Annual Salary ({local['code']})",
+                        value=f"{local['salary_local']:,.0f} {local['code']}",
+                        delta=local_delta,
+                        help=f"Converted using survey-derived rate: 1 USD = {local['rate']} {local['code']} ({local['name']}, {local['rate_year']} survey)",
+                    )
+                    if (
+                        not is_base
+                        and base_local
+                        and base_local["code"] != local["code"]
+                    ):
+                        st.caption(
+                            f"Local currency changed from {base_local['code']} "
+                            f"to {local['code']}; no % change shown."
+                        )
+                    if local["rate_year"] != year:
+                        st.caption(
+                            f"No {year} rate for {country}; "
+                            f"using the {local['rate_year']} survey rate."
+                        )
+
+        st.caption(
+            "The year-over-year change is the difference between two "
+            "survey-based estimates, not a guaranteed raise. The local-currency "
+            "change also includes exchange-rate movements between the surveys."
+        )
 
     except FileNotFoundError:
         st.error(

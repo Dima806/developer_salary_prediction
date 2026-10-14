@@ -1,4 +1,17 @@
 data:
+  sources:
+    '2025': data/2025/survey_results_public.csv
+    '2026': data/2026/survey_results_public.csv
+  column_renames:
+    '2026':
+      Education: EdLevel
+      Role: DevType
+      Compensation: CompTotal
+  category_mappings:
+    '2026': config/category_mapping_2026.yaml
+  currency_rates:
+    '2025': config/currency_rates.yaml
+    '2026': config/currency_rates_2026.yaml
   min_salary: 1000
   lower_percentile: 2
   upper_percentile: 98

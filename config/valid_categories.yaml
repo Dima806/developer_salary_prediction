@@ -7,7 +7,10 @@ Country:
 - Brazil
 - Bulgaria
 - Canada
+- Chile
+- China
 - Colombia
+- Croatia
 - Czech Republic
 - Denmark
 - Finland
@@ -20,15 +23,19 @@ Country:
 - Israel
 - Italy
 - Japan
+- Lithuania
 - Mexico
 - Netherlands
 - New Zealand
+- Nigeria
 - Norway
 - Pakistan
 - Poland
 - Portugal
 - Romania
 - Russian Federation
+- Serbia
+- Slovakia
 - South Africa
 - Spain
 - Sweden
@@ -42,6 +49,7 @@ EdLevel:
 - Bachelor's degree (B.A., B.S., B.Eng., etc.)
 - Master's degree (M.A., M.S., M.Eng., MBA, etc.)
 - Other
+- Primary/elementary school
 - Professional degree (JD, MD, Ph.D, Ed.D, etc.)
 - Secondary school (e.g. American high school, German Realschule or Gymnasium, etc.)
 - Some college/university study without earning a degree
@@ -55,7 +63,9 @@ DevType:
 - Data engineer
 - Data or business analyst
 - Data scientist
+- Database administrator or engineer
 - DevOps engineer or professional
+- Developer, AI apps or physical AI
 - Developer, QA or test
 - Developer, back-end
 - Developer, desktop or enterprise applications
@@ -68,23 +78,32 @@ DevType:
 - Founder, technology or otherwise
 - Product manager
 - Project manager
+- Retired
 - Senior executive (C-suite, VP, etc.)
+- Solutions engineer, implementation engineer, or forward-deployed engineer
 - Student
 - Support engineer or analyst
 - System administrator
 Industry:
+- Agriculture, forestry, fishing, and hunting
 - Banking/Financial Services
 - Computer Systems Design and Services
 - Energy
+- Engineering services or applied R&D
 - Fintech
 - Government
 - Healthcare
 - Higher Education
+- Hospitality or travel
 - Insurance
 - Internet, Telecomm or Information Services
+- Life sciences or biotechnology
 - Manufacturing
 - Media & Advertising Services
+- Mining or construction
+- Non-profit or social services
 - Retail and Consumer Services
+- Scientific research
 - Software Development
 - Transportation, or Supply Chain
 Age:
@@ -113,3 +132,6 @@ Employment:
 - Not employed
 - Retired
 - Student
+SurveyYear:
+- '2025'
+- '2026'

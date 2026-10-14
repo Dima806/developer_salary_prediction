@@ -2,13 +2,18 @@
 
 import numpy as np
 import pandas as pd
+import pytest
+import yaml
 
 from src.train import (
+    REQUIRED_COLUMNS,
     apply_cardinality_reduction,
     compute_currency_rates,
     drop_other_rows,
     extract_valid_categories,
     filter_salaries,
+    load_survey_data,
+    save_currency_rates,
 )
 
 
@@ -36,6 +41,7 @@ def _make_salary_df(countries=None, salaries=None, n=100) -> pd.DataFrame:
             "ICorPM": ["Individual contributor"] * n,
             "OrgSize": ["20 to 99 employees"] * n,
             "Employment": ["Employed"] * n,
+            "SurveyYear": ["2025"] * n,
             "Currency": ["USD United States Dollar"] * n,
             "CompTotal": salaries,
             "ConvertedCompYearly": salaries,
@@ -100,6 +106,25 @@ class TestFilterSalaries:
         }
         result = filter_salaries(df, config)
         assert isinstance(result, pd.DataFrame)
+
+    def test_percentiles_computed_per_year(self):
+        """Each survey year's outliers are removed using its own bounds."""
+        low = [10000.0 + i for i in range(50)]
+        high = [100000.0 + i for i in range(50)]
+        df = _make_salary_df(salaries=low + high)
+        df["SurveyYear"] = ["2025"] * 50 + ["2026"] * 50
+        config = {
+            "data": {
+                "min_salary": 1000,
+                "lower_percentile": 2,
+                "upper_percentile": 98,
+            }
+        }
+        result = filter_salaries(df, config)
+        kept = set(result["ConvertedCompYearly"])
+        # Pooled bounds would keep 10049 and 100000; per-year bounds drop them
+        for value in (10000.0, 10049.0, 100000.0, 100049.0):
+            assert value not in kept
 
 
 class TestApplyCardinalityReduction:
@@ -170,6 +195,7 @@ class TestDropOtherRows:
                 "ICorPM": ["IC", "IC"],
                 "OrgSize": ["Small", "Small"],
                 "Employment": ["FT", "FT"],
+                "SurveyYear": ["2025", "2025"],
             }
         )
         config = {
@@ -195,6 +221,7 @@ class TestDropOtherRows:
                 "ICorPM": ["IC", "IC"],
                 "OrgSize": ["Small", "Small"],
                 "Employment": ["FT", "FT"],
+                "SurveyYear": ["2025", "2025"],
             }
         )
         config = {
@@ -224,6 +251,7 @@ class TestExtractValidCategories:
                 "ICorPM": ["IC", "PM", "IC"],
                 "OrgSize": ["Small", "Large", "Small"],
                 "Employment": ["FT", "PT", "FT"],
+                "SurveyYear": ["2025", "2026", "2025"],
             }
         )
         result = extract_valid_categories(df)
@@ -234,7 +262,7 @@ class TestExtractValidCategories:
         assert result["Employment"] == ["FT", "PT"]
 
     def test_all_categorical_features_present(self):
-        """All 8 categorical features are present as keys."""
+        """All 9 categorical features are present as keys."""
         df = pd.DataFrame(
             {
                 "Country": ["USA"],
@@ -245,6 +273,7 @@ class TestExtractValidCategories:
                 "ICorPM": ["IC"],
                 "OrgSize": ["Small"],
                 "Employment": ["FT"],
+                "SurveyYear": ["2025"],
             }
         )
         result = extract_valid_categories(df)
@@ -257,6 +286,7 @@ class TestExtractValidCategories:
             "ICorPM",
             "OrgSize",
             "Employment",
+            "SurveyYear",
         }
 
     def test_excludes_nan_values(self):
@@ -271,6 +301,7 @@ class TestExtractValidCategories:
                 "ICorPM": ["IC", "IC"],
                 "OrgSize": ["Small", "Small"],
                 "Employment": ["FT", "FT"],
+                "SurveyYear": ["2025", "2025"],
             }
         )
         result = extract_valid_categories(df)
@@ -356,3 +387,109 @@ class TestComputeCurrencyRates:
         )
         result = compute_currency_rates(df, ["USA"])
         assert result == {}
+
+
+class TestLoadSurveyData:
+    """Tests for load_survey_data()."""
+
+    def _write_year(self, path, renames=None, **overrides):
+        row = {col: "x" for col in REQUIRED_COLUMNS}
+        row.update(
+            {"YearsCode": 5, "WorkExp": 3, "CompTotal": 90, "ConvertedCompYearly": 100}
+        )
+        row.update(overrides)
+        row["Extra"] = "ignored"
+        df = pd.DataFrame([row]).rename(columns=renames or {})
+        df.to_csv(path, index=False)
+
+    def test_stacks_years_with_renames_and_mapping(self, tmp_path):
+        """Years are concatenated with SurveyYear, renamed and mapped."""
+        path_2025 = tmp_path / "2025.csv"
+        path_2026 = tmp_path / "2026.csv"
+        mapping_path = tmp_path / "mapping.yaml"
+        self._write_year(path_2025, ICorPM="Individual contributor")
+        self._write_year(
+            path_2026,
+            renames={"EdLevel": "Education"},
+            ICorPM="Individual contributor in a senior or staff-level role",
+        )
+        mapping_path.write_text(
+            yaml.dump(
+                {
+                    "ICorPM": {
+                        "Individual contributor in a senior or staff-level role": (
+                            "Individual contributor"
+                        )
+                    }
+                }
+            )
+        )
+        config = {
+            "data": {
+                "sources": {"2025": str(path_2025), "2026": str(path_2026)},
+                "column_renames": {"2026": {"Education": "EdLevel"}},
+                "category_mappings": {"2026": str(mapping_path)},
+            }
+        }
+        result = load_survey_data(config)
+        assert list(result["SurveyYear"]) == ["2025", "2026"]
+        assert set(result.columns) == set(REQUIRED_COLUMNS) | {"SurveyYear"}
+        assert (result["ICorPM"] == "Individual contributor").all()
+
+    def test_missing_file_raises(self, tmp_path):
+        """A configured but missing CSV raises FileNotFoundError."""
+        config = {"data": {"sources": {"2026": str(tmp_path / "nope.csv")}}}
+        with pytest.raises(FileNotFoundError, match="2026"):
+            load_survey_data(config)
+
+
+class TestPreferredCurrencyCode:
+    """Tests for compute_currency_rates() with preferred_codes."""
+
+    def _df(self, currencies):
+        return pd.DataFrame(
+            {
+                "Country": ["Argentina"] * len(currencies),
+                "Currency": currencies,
+                "CompTotal": [
+                    1000.0 if c.startswith("ARS") else 1.0 for c in currencies
+                ],
+                "ConvertedCompYearly": [1.0] * len(currencies),
+            }
+        )
+
+    def test_keeps_preferred_code_when_present(self):
+        """Preferred code wins even if another code is more common."""
+        df = self._df(["USD US dollar"] * 3 + ["ARS Argentine peso"])
+        result = compute_currency_rates(df, ["Argentina"], {"Argentina": "ARS"})
+        assert result["Argentina"]["code"] == "ARS"
+        assert result["Argentina"]["rate"] == 1000.0
+
+    def test_falls_back_to_mode_when_preferred_absent(self):
+        """If the preferred code is gone (e.g. BGN -> EUR), use the mode."""
+        df = self._df(["USD US dollar"] * 3)
+        result = compute_currency_rates(df, ["Argentina"], {"Argentina": "ARS"})
+        assert result["Argentina"]["code"] == "USD"
+
+
+class TestSaveCurrencyRates:
+    """Tests for save_currency_rates()."""
+
+    def test_rates_computed_per_year(self, tmp_path):
+        """Each year's file only uses that year's rows."""
+        df = pd.DataFrame(
+            {
+                "Country": ["Germany", "Germany"],
+                "Currency": ["EUR European Euro", "EUR European Euro"],
+                "CompTotal": [80.0, 90.0],
+                "ConvertedCompYearly": [100.0, 100.0],
+                "SurveyYear": ["2025", "2026"],
+            }
+        )
+        paths = {"2025": tmp_path / "r25.yaml", "2026": tmp_path / "r26.yaml"}
+        config = {"data": {"currency_rates": {k: str(v) for k, v in paths.items()}}}
+        result = save_currency_rates(df, ["Germany"], config)
+        assert result["2025"]["Germany"]["rate"] == 0.8
+        assert result["2026"]["Germany"]["rate"] == 0.9
+        on_disk = yaml.safe_load(paths["2026"].read_text())
+        assert on_disk["Germany"]["rate"] == 0.9

@@ -1,7 +1,7 @@
 """Example script showing how to use the salary prediction model programmatically."""
 
 from src.schema import SalaryInput
-from src.infer import predict_salary
+from src.infer import predict_salaries, predict_salary
 
 
 def main():
@@ -25,6 +25,7 @@ def main():
         age="25-34 years old",
         ic_or_pm="Individual contributor",
         org_size="20 to 99 employees",
+        employment="Employed",
     )
 
     print(f"Country: {input_data_1.country}")
@@ -54,6 +55,7 @@ def main():
         age="18-24 years old",
         ic_or_pm="Individual contributor",
         org_size="20 to 99 employees",
+        employment="Employed",
     )
 
     print(f"Country: {input_data_2.country}")
@@ -83,6 +85,7 @@ def main():
         age="35-44 years old",
         ic_or_pm="People manager",
         org_size="1,000 to 4,999 employees",
+        employment="Employed",
     )
 
     print(f"Country: {input_data_3.country}")
@@ -112,6 +115,7 @@ def main():
         age="25-34 years old",
         ic_or_pm="Individual contributor",
         org_size="100 to 499 employees",
+        employment="Employed",
     )
 
     print(f"Country: {input_data_4.country}")
@@ -126,6 +130,16 @@ def main():
 
     salary_4 = predict_salary(input_data_4)
     print(f"💰 Predicted Salary: ${salary_4:,.2f} USD/year")
+
+    # Example 5: Both survey years at once (same input as Example 1)
+    print("\n📊 Example 5: 2025 vs 2026 (same input as Example 1)")
+    print("-" * 60)
+
+    salaries = predict_salaries(input_data_1)
+    for year, salary in salaries.items():
+        print(f"💰 {year}: ${salary:,.2f} USD/year")
+    change = (salaries["2026"] / salaries["2025"] - 1) * 100
+    print(f"📈 2026 vs 2025: {change:+.1f}%")
 
     print("\n" + "=" * 60)
     print("✅ All predictions completed successfully!")

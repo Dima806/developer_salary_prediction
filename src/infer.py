@@ -33,43 +33,78 @@ if not valid_categories_path.exists():
 with open(valid_categories_path, "r") as f:
     valid_categories = yaml.safe_load(f)
 
-# Load currency conversion rates
-currency_rates_path = Path("config/currency_rates.yaml")
-currency_rates = {}
-if currency_rates_path.exists():
-    with open(currency_rates_path, "r") as f:
-        currency_rates = yaml.safe_load(f) or {}
+# Load currency conversion rates, one file per survey year
+with open(Path("config/model_parameters.yaml"), "r") as f:
+    _currency_rate_paths = yaml.safe_load(f)["data"]["currency_rates"]
+
+currency_rates_by_year = {}
+for _year, _path in _currency_rate_paths.items():
+    if Path(_path).exists():
+        with open(_path, "r") as f:
+            currency_rates_by_year[str(_year)] = yaml.safe_load(f) or {}
+
+# 2025 rates, kept under the old name for backward compatibility
+currency_rates = currency_rates_by_year.get("2025", {})
 
 
-def get_local_currency(country: str, salary_usd: float) -> dict | None:
-    """Convert USD salary to local currency for a given country.
+def get_local_currency(
+    country: str, salary_usd: float, survey_year: str = "2025"
+) -> dict | None:
+    """Convert USD salary to local currency for a given country and year.
+
+    Uses that survey year's rate; if the country has no rate for that year,
+    falls back to another year's rate.
 
     Returns:
-        Dict with code, name, rate, and salary_local, or None if unavailable.
+        Dict with code, name, rate, rate_year, and salary_local, or None if
+        no rate is available for the country in any year.
     """
-    if country not in currency_rates:
-        return None
-    info = currency_rates[country]
+    years = [survey_year] + [y for y in currency_rates_by_year if y != survey_year]
+    for year in years:
+        info = currency_rates_by_year.get(year, {}).get(country)
+        if info is not None:
+            return {
+                "code": info["code"],
+                "name": info["name"],
+                "rate": info["rate"],
+                "rate_year": year,
+                "salary_local": round(salary_usd * info["rate"], 2),
+            }
+    return None
+
+
+def predict_salaries(data: SalaryInput) -> dict[str, float]:
+    """Predict salary for every survey year the model was trained on.
+
+    Returns:
+        Dict mapping survey year (e.g. "2025", "2026") to USD salary.
+    """
     return {
-        "code": info["code"],
-        "name": info["name"],
-        "rate": info["rate"],
-        "salary_local": round(salary_usd * info["rate"], 2),
+        year: predict_salary(data, survey_year=year)
+        for year in valid_categories["SurveyYear"]
     }
 
 
-def predict_salary(data: SalaryInput) -> float:
+def predict_salary(data: SalaryInput, survey_year: str = "2025") -> float:
     """Predict salary based on input features.
 
     Args:
         data: SalaryInput model with developer information
+        survey_year: Survey year to predict for (e.g. "2025", "2026")
 
     Returns:
         Predicted annual salary in USD
 
     Raises:
-        ValueError: If country or education_level is not in valid categories
+        ValueError: If any categorical input or survey_year is not in
+            valid categories
     """
+    if survey_year not in valid_categories["SurveyYear"]:
+        raise ValueError(
+            f"Invalid survey year: '{survey_year}'. "
+            f"Must be one of {valid_categories['SurveyYear']}."
+        )
+
     # Validate input against valid categories from training
     if data.country not in valid_categories["Country"]:
         raise ValueError(
@@ -140,6 +175,7 @@ def predict_salary(data: SalaryInput) -> float:
             "ICorPM": [data.ic_or_pm],
             "OrgSize": [data.org_size],
             "Employment": [data.employment],
+            "SurveyYear": [survey_year],
         }
     )
 

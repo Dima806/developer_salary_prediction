@@ -20,14 +20,81 @@ CATEGORICAL_FEATURES = [
     "ICorPM",
     "OrgSize",
     "Employment",
+    "SurveyYear",
+]
+
+# Columns read from each survey CSV (after per-year column renames)
+REQUIRED_COLUMNS = [
+    "Country",
+    "YearsCode",
+    "WorkExp",
+    "EdLevel",
+    "DevType",
+    "Industry",
+    "Age",
+    "ICorPM",
+    "OrgSize",
+    "Employment",
+    "Currency",
+    "CompTotal",
+    "ConvertedCompYearly",
 ]
 
 
-def filter_salaries(df: pd.DataFrame, config: dict) -> pd.DataFrame:
-    """Filter rows by minimum salary and per-country percentile outlier removal.
+def load_survey_data(config: dict) -> pd.DataFrame:
+    """Load every configured survey year and stack them with SurveyYear.
+
+    For each year in config data.sources, reads REQUIRED_COLUMNS (applying
+    data.column_renames), maps answer wording via data.category_mappings,
+    and adds SurveyYear as a string.
 
     Args:
-        df: DataFrame with ConvertedCompYearly and Country columns.
+        config: Config dict with data.sources and optional
+                data.column_renames / data.category_mappings.
+
+    Returns:
+        Concatenated DataFrame of all years.
+
+    Raises:
+        FileNotFoundError: If a configured survey CSV does not exist.
+    """
+    data_config = config["data"]
+    renames = data_config.get("column_renames") or {}
+    mappings = data_config.get("category_mappings") or {}
+
+    frames = []
+    for year, path in data_config["sources"].items():
+        year = str(year)
+        path = Path(path)
+        if not path.exists():
+            raise FileNotFoundError(
+                f"Data file for {year} not found at {path}. Download from "
+                "https://survey.stackoverflow.co/"
+            )
+
+        year_renames = renames.get(year) or {}
+        source_names = {new: old for old, new in year_renames.items()}
+        usecols = [source_names.get(col, col) for col in REQUIRED_COLUMNS]
+        df = pd.read_csv(path, usecols=usecols).rename(columns=year_renames)
+
+        if year in mappings:
+            with open(mappings[year], "r") as f:
+                category_mapping = yaml.safe_load(f) or {}
+            for col, mapping in category_mapping.items():
+                df[col] = df[col].replace(mapping)
+
+        df["SurveyYear"] = year
+        print(f"Loaded {len(df):,} rows for {year} from {path}")
+        frames.append(df)
+
+    return pd.concat(frames, ignore_index=True)
+
+
+def filter_salaries(df: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """Filter rows by minimum salary and per-year, per-country outlier removal.
+
+    Args:
+        df: DataFrame with ConvertedCompYearly, SurveyYear and Country columns.
         config: Config dict with data.min_salary, data.lower_percentile,
                 data.upper_percentile.
 
@@ -40,8 +107,9 @@ def filter_salaries(df: pd.DataFrame, config: dict) -> pd.DataFrame:
 
     lower_pct = config["data"]["lower_percentile"] / 100
     upper_pct = config["data"]["upper_percentile"] / 100
-    lower_bound = df.groupby("Country")[main_label].transform("quantile", lower_pct)
-    upper_bound = df.groupby("Country")[main_label].transform("quantile", upper_pct)
+    groups = df.groupby(["SurveyYear", "Country"])[main_label]
+    lower_bound = groups.transform("quantile", lower_pct)
+    upper_bound = groups.transform("quantile", upper_pct)
     df = df[(df[main_label] > lower_bound) & (df[main_label] < upper_bound)]
 
     df = df.dropna(subset=[main_label])
@@ -96,12 +164,19 @@ def extract_valid_categories(df: pd.DataFrame) -> dict:
     }
 
 
-def compute_currency_rates(df: pd.DataFrame, valid_countries: list[str]) -> dict:
+def compute_currency_rates(
+    df: pd.DataFrame,
+    valid_countries: list[str],
+    preferred_codes: dict[str, str] | None = None,
+) -> dict:
     """Compute median currency conversion rates per country.
 
     Args:
         df: DataFrame with Country, Currency, CompTotal, ConvertedCompYearly columns.
         valid_countries: List of valid country names to compute rates for.
+        preferred_codes: Optional {country: currency code} to keep (e.g. the
+            previous survey year's code) when it still appears in the data;
+            otherwise the most common code is used.
 
     Returns:
         Dict mapping country to {code, name, rate}.
@@ -121,10 +196,11 @@ def compute_currency_rates(df: pd.DataFrame, valid_countries: list[str]) -> dict
         country_data = currency_df[currency_df["Country"] == country]
         if country_data.empty:
             continue
-        most_common = country_data["CurrencyCode"].mode()
-        if most_common.empty:
-            continue
-        code = most_common.iloc[0]
+        preferred = (preferred_codes or {}).get(country)
+        if preferred in set(country_data["CurrencyCode"]):
+            code = preferred
+        else:
+            code = country_data["CurrencyCode"].mode().iloc[0]
         name_row = country_data[country_data["CurrencyCode"] == code].iloc[0]
         full_name = name_row["CurrencyName"]
         rates = country_data[country_data["CurrencyCode"] == code]["rate"]
@@ -138,6 +214,43 @@ def compute_currency_rates(df: pd.DataFrame, valid_countries: list[str]) -> dict
     return currency_rates
 
 
+def save_currency_rates(
+    df: pd.DataFrame, valid_countries: list[str], config: dict
+) -> dict:
+    """Compute currency rates per survey year and write one YAML per year.
+
+    Each year's rates use only that year's rows; output paths come from
+    config data.currency_rates. A country keeps the previous year's currency
+    while that currency still appears in the data (e.g. Argentina stays on
+    ARS even if as many respondents report USD), so years stay comparable.
+
+    Returns:
+        Dict mapping survey year to its {country: {code, name, rate}} dict.
+    """
+    rates_by_year = {}
+    previous_codes = {}
+    for year, path in sorted(config["data"]["currency_rates"].items()):
+        year = str(year)
+        year_df = df[df["SurveyYear"] == year]
+        rates = compute_currency_rates(year_df, valid_countries, previous_codes)
+        previous_codes = {country: info["code"] for country, info in rates.items()}
+        with open(path, "w") as f:
+            yaml.dump(
+                rates,
+                f,
+                default_flow_style=False,
+                sort_keys=True,
+                allow_unicode=True,
+            )
+        print(f"Saved currency rates for {len(rates)} countries to {path}")
+        for country, info in sorted(rates.items()):
+            print(
+                f"  {country:45s} -> {info['code']} ({info['name']}, rate: {info['rate']})"
+            )
+        rates_by_year[year] = rates
+    return rates_by_year
+
+
 def main():
     """Train and save the salary prediction model."""
     # Load configuration
@@ -147,35 +260,11 @@ def main():
         config = yaml.safe_load(f)
 
     print("Loading data...")
-    data_path = Path("data/survey_results_public.csv")
-
-    if not data_path.exists():
-        print(f"Error: Data file not found at {data_path}")
-        print(
-            "Please download the Stack Overflow Developer Survey CSV and place it in the data/ directory."
-        )
-        print("Download from: https://insights.stackoverflow.com/survey")
+    try:
+        df = load_survey_data(config)
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
         return
-
-    # Load only required columns to save memory
-    df = pd.read_csv(
-        data_path,
-        usecols=[
-            "Country",
-            "YearsCode",
-            "WorkExp",
-            "EdLevel",
-            "DevType",
-            "Industry",
-            "Age",
-            "ICorPM",
-            "OrgSize",
-            "Employment",
-            "Currency",
-            "CompTotal",
-            "ConvertedCompYearly",
-        ],
-    )
 
     print(f"Loaded {len(df):,} rows")
 
@@ -215,27 +304,9 @@ def main():
         f"\nSaved {len(valid_categories['Country'])} valid countries, {len(valid_categories['EdLevel'])} valid education levels, {len(valid_categories['DevType'])} valid developer types, {len(valid_categories['Industry'])} valid industries, {len(valid_categories['Age'])} valid age ranges, and {len(valid_categories['ICorPM'])} valid IC/PM values to {valid_categories_path}"
     )
 
-    # Compute currency conversion rates per country
-    print("\nComputing currency conversion rates per country...")
-    currency_rates = compute_currency_rates(df, valid_categories["Country"])
-
-    currency_rates_path = Path("config/currency_rates.yaml")
-    with open(currency_rates_path, "w") as f:
-        yaml.dump(
-            currency_rates,
-            f,
-            default_flow_style=False,
-            sort_keys=True,
-            allow_unicode=True,
-        )
-
-    print(
-        f"Saved currency rates for {len(currency_rates)} countries to {currency_rates_path}"
-    )
-    for country, info in sorted(currency_rates.items()):
-        print(
-            f"  {country:45s} -> {info['code']} ({info['name']}, rate: {info['rate']})"
-        )
+    # Compute currency conversion rates per country, separately per year
+    print("\nComputing currency conversion rates per country and year...")
+    save_currency_rates(df, valid_categories["Country"], config)
 
     print(f"\nFeature matrix shape: {X.shape}")
     print(f"Total features: {X.shape[1]}")
@@ -286,6 +357,11 @@ def main():
     top_employment = df["Employment"].value_counts()
     for emp, count in top_employment.items():
         print(f"  - {emp}: {count:,} ({count / len(df) * 100:.1f}%)")
+
+    # Show survey year distribution
+    print("\n📅 Survey Year Distribution:")
+    for year, count in df["SurveyYear"].value_counts().sort_index().items():
+        print(f"  - {year}: {count:,} ({count / len(df) * 100:.1f}%)")
 
     # Show YearsCode statistics
     print("\n💼 Years of Coding Experience:")

@@ -15,7 +15,7 @@
 | `make ci` | lint + test (mirrors `.github/workflows/ci.yml`) |
 | `make pre-commit` | `prek run --all-files` (reads `.pre-commit-config.yaml`) |
 
-## Data / model pipeline (requires `data/survey_results_public.csv`)
+## Data / model pipeline (requires `data/2025/` and `data/2026/survey_results_public.csv`)
 | Target | What it does | Requires |
 |--------|-------------|---------|
 | `make pre-process` | Validate columns, write valid_categories + currency_rates | data CSV |

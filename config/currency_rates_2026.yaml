@@ -1,0 +1,180 @@
+Argentina:
+  code: ARS
+  name: Argentine peso
+  rate: 1499.5
+Australia:
+  code: AUD
+  name: Australian dollar
+  rate: 1.43
+Austria:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+Bangladesh:
+  code: BDT
+  name: Bangladeshi taka
+  rate: 123.44
+Belgium:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+Brazil:
+  code: BRL
+  name: Brazilian real
+  rate: 5.14
+Bulgaria:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+Canada:
+  code: CAD
+  name: Canadian dollar
+  rate: 1.41
+Chile:
+  code: CLP
+  name: Chilean peso
+  rate: 938.41
+China:
+  code: CNY
+  name: Chinese Yuan Renminbi
+  rate: 6.77
+Colombia:
+  code: COP
+  name: Colombian peso
+  rate: 3210.93
+Croatia:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+Czech Republic:
+  code: CZK
+  name: Czech koruna
+  rate: 21.26
+Denmark:
+  code: DKK
+  name: Danish krone
+  rate: 6.57
+Finland:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+France:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+Germany:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+Greece:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+Hungary:
+  code: HUF
+  name: Hungarian forint
+  rate: 317.63
+India:
+  code: INR
+  name: Indian rupee
+  rate: 95.73
+Ireland:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+Israel:
+  code: ILS
+  name: Israeli new shekel
+  rate: 3.06
+Italy:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+Japan:
+  code: JPY
+  name: Japanese yen
+  rate: 163.83
+Lithuania:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+Mexico:
+  code: MXN
+  name: Mexican peso
+  rate: 17.47
+Netherlands:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+New Zealand:
+  code: NZD
+  name: New Zealand dollar
+  rate: 1.73
+Nigeria:
+  code: NGN
+  name: Nigerian naira
+  rate: 1365.5
+Norway:
+  code: NOK
+  name: Norwegian krone
+  rate: 9.68
+Pakistan:
+  code: PKR
+  name: Pakistani rupee
+  rate: 277.75
+Poland:
+  code: PLN
+  name: Polish zloty
+  rate: 3.8
+Portugal:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+Romania:
+  code: RON
+  name: Romanian leu
+  rate: 4.6
+Russian Federation:
+  code: RUB
+  name: Russian ruble
+  rate: 78.6
+Serbia:
+  code: RSD
+  name: Serbian dinar
+  rate: 103.24
+Slovakia:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+South Africa:
+  code: ZAR
+  name: South African rand
+  rate: 16.74
+Spain:
+  code: EUR
+  name: European Euro
+  rate: 0.88
+Sweden:
+  code: SEK
+  name: Swedish krona
+  rate: 9.73
+Switzerland:
+  code: CHF
+  name: Swiss franc
+  rate: 0.82
+Turkey:
+  code: TRY
+  name: Turkish lira
+  rate: 47.38
+Ukraine:
+  code: UAH
+  name: Ukrainian hryvnia
+  rate: 44.96
+United Kingdom of Great Britain and Northern Ireland:
+  code: GBP
+  name: Pound sterling
+  rate: 0.75
+United States of America:
+  code: USD
+  name: United States dollar
+  rate: 1.0

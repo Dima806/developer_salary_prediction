@@ -15,6 +15,7 @@ from src.train import (
     apply_cardinality_reduction,
     drop_other_rows,
     filter_salaries,
+    load_survey_data,
 )
 
 
@@ -128,33 +129,11 @@ def main():
 
     # Load and preprocess data
     print("Loading data...")
-    data_path = Path("data/survey_results_public.csv")
-    if not data_path.exists():
-        print(f"Error: Data file not found at {data_path}")
-        print(
-            "Please download the Stack Overflow Developer Survey CSV "
-            "and place it in the data/ directory."
-        )
+    try:
+        df = load_survey_data(config)
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
         return
-
-    df = pd.read_csv(
-        data_path,
-        usecols=[
-            "Country",
-            "YearsCode",
-            "WorkExp",
-            "EdLevel",
-            "DevType",
-            "Industry",
-            "Age",
-            "ICorPM",
-            "OrgSize",
-            "Employment",
-            "Currency",
-            "CompTotal",
-            "ConvertedCompYearly",
-        ],
-    )
     print(f"Loaded {len(df):,} rows")
 
     df = filter_salaries(df, config)

@@ -208,8 +208,8 @@ __marimo__/
 
 # Project-specific
 # Data files (too large for git)
-data/*.csv
-data/*.zip
+data/**/*.csv
+data/**/*.zip
 
 # Trained model artifacts
 # Note: Model files are included in the repo for deployment
@@ -218,3 +218,6 @@ data/*.zip
 
 # LLM
 .llm/
+
+# Planning docs (local only)
+PRD.md

@@ -1,0 +1,22 @@
+# 2026 survey answer wording -> 2025 wording, applied to 2026 rows at load
+# time (see load_survey_data in src/train.py). Values new in 2026 without a
+# 2025 equivalent are left as-is. Apostrophe and "Other ..." variants are
+# already normalised by preprocessing, so they are not listed here.
+DevType:
+  "Founder or entrepreneur": "Founder, technology or otherwise"
+  "UX, research, or UI design professional": "UX, Research Ops or UI design professional"
+Industry:
+  "Software development": "Software Development"
+  "Banking/financial services": "Banking/Financial Services"
+  "Retail, e-commerce, or consumer services": "Retail and Consumer Services"
+  "Media or advertising services": "Media & Advertising Services"
+  "Transportation or supply chain": "Transportation, or Supply Chain"
+  "Utilities, internet, or telecommunications": "Internet, Telecomm or Information Services"
+  "IT services, consulting, systems integration, or managed services": "Computer Systems Design and Services"
+  "Education": "Higher Education"
+ICorPM:
+  # 2025 offered only two answers; senior ICs are ICs, and people who are
+  # both are closest to managers (keeps the manager share similar across
+  # years: 2025 = 14.5%, 2026 mapped = 18%).
+  "Individual contributor in a senior or staff-level role": "Individual contributor"
+  "Both people manager and individual contributor": "People manager"

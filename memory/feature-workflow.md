@@ -1,18 +1,22 @@
 # Adding a New Input Feature
 
-Current features (v3.0.0): Country, YearsCode, WorkExp, EdLevel, DevType,
-Industry, Age, ICorPM, OrgSize, Employment
+Current features (v3.1.0): Country, YearsCode, WorkExp, EdLevel, DevType,
+Industry, Age, ICorPM, OrgSize, Employment, SurveyYear
+
+`SurveyYear` ("2025" / "2026") is **derived** by `load_survey_data`, not a user
+input: not in `SalaryInput`, no selectbox, not in `drop_other_from`. The app
+predicts every year via `predict_salaries`.
 
 ## Checklist (18 steps, in order)
 
 1. `config/model_parameters.yaml` — add to `features.cardinality.drop_other_from` if applicable
 2. `src/schema.py` — add `field: str` to `SalaryInput`; update JSON example in model_config
 3. `src/preprocessing.py` — add to `_categorical_cols` list; add `.fillna("Unknown")`; add to `feature_cols`
-4. `src/train.py` — add to `CATEGORICAL_FEATURES` and `usecols`
-5. `src/tune.py` — add to `usecols`
-6. `src/preprocess.py` — add to `REQUIRED_COLUMNS`
+4. `src/train.py` — add to `CATEGORICAL_FEATURES`
+5. (nothing for `src/tune.py` — it uses `load_survey_data`)
+6. `src/train.py` — add to `REQUIRED_COLUMNS` (if the 2026 CSV names it differently, add to `data.column_renames`)
 7. `src/infer.py` — add validation block + add to `input_df` dict
-8. `guardrail_evaluation.py` — add to `CATEGORICAL_FEATURES` and `usecols`
+8. (nothing for `guardrail_evaluation.py` — it imports `CATEGORICAL_FEATURES` and the loader from `src/train.py`)
 9. `app.py` — add `valid_X`, `default_X`, selectbox, sidebar entry, `SalaryInput(x=x)`
 10. `tests/conftest.py` — add to `sample_salary_input` fixture
 11. `tests/test_schema.py` — add to 3 direct `SalaryInput(...)` calls in missing-field tests

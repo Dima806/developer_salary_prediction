@@ -14,19 +14,14 @@ import yaml
 from sklearn.model_selection import KFold
 from xgboost import XGBRegressor
 
-from src.preprocessing import prepare_features, reduce_cardinality
-
-
-CATEGORICAL_FEATURES = [
-    "Country",
-    "EdLevel",
-    "DevType",
-    "Industry",
-    "Age",
-    "ICorPM",
-    "OrgSize",
-    "Employment",
-]
+from src.preprocessing import prepare_features
+from src.train import (
+    CATEGORICAL_FEATURES,
+    apply_cardinality_reduction,
+    drop_other_rows,
+    filter_salaries,
+    load_survey_data,
+)
 
 
 def load_and_preprocess(
@@ -38,57 +33,19 @@ def load_and_preprocess(
         (df, X, y) where df has original categorical columns (after cardinality
         reduction), X is one-hot encoded features, y is the target.
     """
-    data_path = Path("data/survey_results_public.csv")
-    if not data_path.exists():
-        print(f"Error: Data file not found at {data_path}")
+    try:
+        df = load_survey_data(config)
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
         sys.exit(1)
 
-    df = pd.read_csv(
-        data_path,
-        usecols=[
-            "Country",
-            "YearsCode",
-            "WorkExp",
-            "EdLevel",
-            "DevType",
-            "Industry",
-            "Age",
-            "ICorPM",
-            "OrgSize",
-            "Employment",
-            "ConvertedCompYearly",
-        ],
-    )
-
+    # Same filtering and cardinality steps as train.py
     main_label = "ConvertedCompYearly"
-    min_salary = config["data"]["min_salary"]
-    df = df[df[main_label] > min_salary]
-
-    # Per-country percentile outlier removal
-    lower_pct = config["data"]["lower_percentile"] / 100
-    upper_pct = config["data"]["upper_percentile"] / 100
-    lower_bound = df.groupby("Country")[main_label].transform("quantile", lower_pct)
-    upper_bound = df.groupby("Country")[main_label].transform("quantile", upper_pct)
-    df = df[(df[main_label] > lower_bound) & (df[main_label] < upper_bound)]
-
-    df = df.dropna(subset=[main_label])
-
-    # Cardinality reduction (same as train.py)
-    for col in CATEGORICAL_FEATURES:
-        df[col] = reduce_cardinality(df[col])
-
-    # Drop rows with "Other" in specified features (same as train.py)
-    cardinality = config["features"]["cardinality"]
-    other_name = cardinality.get("other_category", "Other")
-    drop_other_from = cardinality.get("drop_other_from", [])
-    if drop_other_from:
-        before_drop = len(df)
-        for col in drop_other_from:
-            df = df[df[col] != other_name]
-        print(
-            f"Dropped {before_drop - len(df):,} rows with "
-            f"'{other_name}' in {drop_other_from}"
-        )
+    df = filter_salaries(df, config)
+    df = apply_cardinality_reduction(df)
+    before_drop = len(df)
+    df = drop_other_rows(df, config)
+    print(f"Dropped {before_drop - len(df):,} rows with 'Other' values")
 
     X = prepare_features(df)
     y = df[main_label]

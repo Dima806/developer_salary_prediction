@@ -88,6 +88,7 @@ class TestPrepareFeatures:
                 "ICorPM": ["Individual contributor"],
                 "OrgSize": ["20 to 99 employees"],
                 "Employment": ["Employed"],
+                "SurveyYear": ["2025"],
             }
         )
         result = prepare_features(df)
@@ -108,6 +109,7 @@ class TestPrepareFeatures:
                 "ICorPM": ["Individual contributor"],
                 "OrgSize": ["20 to 99 employees"],
                 "Employment": ["Employed"],
+                "SurveyYear": ["2025"],
             }
         )
         result = prepare_features(df)
@@ -128,6 +130,7 @@ class TestPrepareFeatures:
                 "ICorPM": ["Individual contributor", "People manager"],
                 "OrgSize": ["20 to 99 employees", "100 to 499 employees"],
                 "Employment": ["Employed", "Employed"],
+                "SurveyYear": ["2025", "2026"],
             }
         )
         result = prepare_features(df)
@@ -152,6 +155,7 @@ class TestPrepareFeatures:
                 "ICorPM": ["Individual contributor"],
                 "OrgSize": ["20 to 99 employees"],
                 "Employment": ["Employed"],
+                "SurveyYear": ["2025"],
             }
         )
         result = prepare_features(df)
@@ -172,6 +176,7 @@ class TestPrepareFeatures:
                 "ICorPM": [None],
                 "OrgSize": [None],
                 "Employment": [None],
+                "SurveyYear": [None],
             }
         )
         result = prepare_features(df)
@@ -191,6 +196,7 @@ class TestPrepareFeatures:
             "ICorPM": ["Individual contributor"],
             "OrgSize": ["20 to 99 employees"],
             "Employment": ["Employed"],
+            "SurveyYear": ["2025"],
         }
         df_usa = pd.DataFrame({"Country": ["United States of America"], **base})
         df_deu = pd.DataFrame({"Country": ["Germany"], **base})
@@ -217,8 +223,30 @@ class TestPrepareFeatures:
                 "ICorPM": ["Individual contributor"],
                 "OrgSize": ["20 to 99 employees"],
                 "Employment": ["Employed"],
+                "SurveyYear": ["2025"],
             }
         )
         original_country = df["Country"].iloc[0]
         prepare_features(df)
         assert df["Country"].iloc[0] == original_country
+
+    def test_survey_year_encoded_as_single_column(self):
+        """With drop_first, two survey years give one SurveyYear_2026 column."""
+        df = pd.DataFrame(
+            {
+                "Country": ["India", "India"],
+                "YearsCode": [5.0, 5.0],
+                "WorkExp": [3.0, 3.0],
+                "EdLevel": ["Other", "Other"],
+                "DevType": ["Developer, back-end", "Developer, back-end"],
+                "Industry": ["Software Development", "Software Development"],
+                "Age": ["25-34 years old", "25-34 years old"],
+                "ICorPM": ["Individual contributor", "Individual contributor"],
+                "OrgSize": ["20 to 99 employees", "20 to 99 employees"],
+                "Employment": ["Employed", "Employed"],
+                "SurveyYear": ["2025", "2026"],
+            }
+        )
+        result = prepare_features(df)
+        year_cols = [c for c in result.columns if c.startswith("SurveyYear_")]
+        assert year_cols == ["SurveyYear_2026"]

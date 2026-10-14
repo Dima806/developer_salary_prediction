@@ -30,10 +30,22 @@ Canada:
   code: CAD
   name: Canadian dollar
   rate: 1.37
+Chile:
+  code: CLP
+  name: Chilean peso
+  rate: 943.13
+China:
+  code: CNY
+  name: Chinese Yuan Renminbi
+  rate: 7.18
 Colombia:
   code: COP
   name: Colombian peso
   rate: 4086.91
+Croatia:
+  code: EUR
+  name: European Euro
+  rate: 0.86
 Czech Republic:
   code: CZK
   name: Czech koruna
@@ -82,6 +94,10 @@ Japan:
   code: JPY
   name: Japanese yen
   rate: 144.74
+Lithuania:
+  code: EUR
+  name: European Euro
+  rate: 0.86
 Mexico:
   code: MXN
   name: Mexican peso
@@ -94,6 +110,10 @@ New Zealand:
   code: NZD
   name: New Zealand dollar
   rate: 1.66
+Nigeria:
+  code: NGN
+  name: Nigerian naira
+  rate: 1548.83
 Norway:
   code: NOK
   name: Norwegian krone
@@ -118,6 +138,14 @@ Russian Federation:
   code: RUB
   name: Russian ruble
   rate: 78.37
+Serbia:
+  code: RSD
+  name: Serbian dinar
+  rate: 101.01
+Slovakia:
+  code: EUR
+  name: European Euro
+  rate: 0.86
 South Africa:
   code: ZAR
   name: South African rand

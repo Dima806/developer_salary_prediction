@@ -395,3 +395,27 @@ def test_combined_features():
     assert len(set(predictions)) == len(predictions), (
         f"Expected {len(predictions)} unique, got {len(set(predictions))}"
     )
+
+
+def test_survey_year_impact():
+    """Test that changing the survey year changes prediction."""
+    base_input = {
+        "country": "United States of America",
+        "years_code": 10.0,
+        "work_exp": 8.0,
+        "education_level": "Bachelor's degree (B.A., B.S., B.Eng., etc.)",
+        "dev_type": "Developer, full-stack",
+        "industry": "Software Development",
+        "age": "35-44 years old",
+        "ic_or_pm": "Individual contributor",
+        "org_size": "1,000 to 4,999 employees",
+        "employment": "Employed",
+    }
+    input_data = SalaryInput(**base_input)
+    predictions = [
+        predict_salary(input_data, survey_year=year)
+        for year in valid_categories["SurveyYear"]
+    ]
+    assert len(set(predictions)) == len(predictions), (
+        f"Survey years produced identical predictions: {predictions}"
+    )
