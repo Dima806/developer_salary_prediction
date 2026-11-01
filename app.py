@@ -254,7 +254,8 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
                     help=f"Predicted annual compensation in USD ({year} survey)",
                 )
                 if has_interval:
-                    st.caption(f"{cov_pct} range: ${lower:,.0f} – ${upper:,.0f}")
+                    # Escape $ so Streamlit markdown does not read $...$ as LaTeX
+                    st.caption(rf"{cov_pct} range: \${lower:,.0f} – \${upper:,.0f}")
                 if local and local["code"] != "USD":
                     code = local["code"]
                     # No % when the currency itself changed (e.g. BGN -> EUR)
@@ -306,28 +307,45 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
         if interval_rows:
             chart_df = pd.DataFrame(interval_rows)
             base = alt.Chart(chart_df).encode(
-                y=alt.Y("year:N", title=None, sort=sorted(salaries))
+                y=alt.Y(
+                    "year:N",
+                    title=None,
+                    sort=sorted(salaries),
+                    scale=alt.Scale(padding=0.5),
+                    axis=alt.Axis(
+                        labelFontSize=15,
+                        labelFontWeight="bold",
+                        labelPadding=12,
+                        ticks=False,
+                        domain=False,
+                    ),
+                )
             )
-            band = base.mark_rule(size=3, color=INTERVAL_COLOR, opacity=0.55).encode(
+            # Soft rounded band = the interval; solid dot = the point estimate
+            band = base.mark_rule(
+                size=10, color=INTERVAL_COLOR, opacity=0.3, strokeCap="round"
+            ).encode(
                 x=alt.X(
                     "lower:Q",
-                    title=f"Annual salary (USD) — point + {cov_pct} interval",
-                    axis=alt.Axis(format="$,.0f"),
+                    title=f"Annual salary (USD) — point estimate + {cov_pct} interval",
+                    axis=alt.Axis(format="$,.0f", grid=False),
                     scale=alt.Scale(zero=False, nice=True),
                 ),
                 x2="upper:Q",
             )
-            dot = base.mark_point(size=140, filled=True, color=INTERVAL_COLOR).encode(
-                x="mean:Q"
+            dot = base.mark_point(
+                size=180, filled=True, color=INTERVAL_COLOR, opacity=1
+            ).encode(x="mean:Q")
+            # Value label above each dot; theme ink (not the series color)
+            label = base.mark_text(dy=-15, fontSize=13, fontWeight="bold").encode(
+                x="mean:Q", text=alt.Text("mean:Q", format="$,.0f")
             )
-            label = base.mark_text(
-                dy=-13, color=INTERVAL_COLOR, fontWeight="bold"
-            ).encode(x="mean:Q", text=alt.Text("mean:Q", format="$,.0f"))
-            st.altair_chart(band + dot + label, use_container_width=True)
+            chart = (band + dot + label).properties(height=150)
+            st.altair_chart(chart, use_container_width=True)
 
         if cov_pct:
             interval_note = (
-                f"The bar is a {cov_pct} prediction interval (conformal, "
+                f"The bar shows an {cov_pct} prediction interval (conformal, "
                 "calibrated per survey year on held-out responses): about "
                 f"{cov_pct} of developers matching these inputs earn within it. "
                 "The point is the model's central estimate. "
