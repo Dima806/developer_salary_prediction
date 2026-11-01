@@ -8,7 +8,7 @@ app_port: 8501
 tags:
 - streamlit
 pinned: false
-short_description: Developer salary prediction using 2025-2026 Stackoverflow surveys
+short_description: Developer salary predictions with 80% uncertainty ranges
 license: apache-2.0
 ---
 
