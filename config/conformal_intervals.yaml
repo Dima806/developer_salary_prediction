@@ -1,0 +1,7 @@
+coverage: 0.8
+space: log
+method: cv_mondrian_year
+log_residual_quantile:
+  _overall: 0.5119719092744592
+  '2025': 0.5108960508045062
+  '2026': 0.5158249619571222

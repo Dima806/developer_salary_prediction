@@ -3,7 +3,13 @@
 import pytest
 
 import src.infer as infer
-from src.infer import get_local_currency, predict_salaries, predict_salary
+from src.infer import (
+    get_local_currency,
+    predict_salaries,
+    predict_salaries_with_intervals,
+    predict_salary,
+    predict_salary_interval,
+)
 from src.schema import SalaryInput
 
 
@@ -125,3 +131,48 @@ def test_get_local_currency_falls_back_to_other_year(monkeypatch):
     result = get_local_currency("Germany", 100, "2026")
     assert result["rate"] == 0.8
     assert result["rate_year"] == "2025"
+
+
+def test_predict_salary_interval_bounds_bracket_point(sample_salary_input):
+    """predict_salary_interval returns lower <= prediction <= upper."""
+    data = SalaryInput(**sample_salary_input)
+    result = predict_salary_interval(data, survey_year="2025")
+    assert set(result) == {"prediction", "lower", "upper", "coverage"}
+    assert result["prediction"] == predict_salary(data, survey_year="2025")
+    if result["lower"] is not None:
+        assert result["lower"] >= 0
+        assert result["lower"] <= result["prediction"] <= result["upper"]
+        assert 0 < result["coverage"] < 1
+
+
+def test_predict_salaries_with_intervals_covers_all_years(sample_salary_input):
+    """One interval dict per survey year, each bracketing its point."""
+    data = SalaryInput(**sample_salary_input)
+    result = predict_salaries_with_intervals(data)
+    assert set(result) == {"2025", "2026"}
+    for info in result.values():
+        assert info["lower"] <= info["prediction"] <= info["upper"]
+
+
+def test_interval_width_scales_with_salary(sample_salary_input):
+    """The multiplicative interval is wider (in USD) for higher salaries."""
+    low = SalaryInput(**{**sample_salary_input, "country": "India"})
+    high = SalaryInput(**{**sample_salary_input, "country": "United States of America"})
+    low_i = predict_salary_interval(low, "2025")
+    high_i = predict_salary_interval(high, "2025")
+    if low_i["lower"] is not None and high_i["lower"] is not None:
+        low_width = low_i["upper"] - low_i["lower"]
+        high_width = high_i["upper"] - high_i["lower"]
+        assert high_i["prediction"] > low_i["prediction"]
+        assert high_width > low_width
+
+
+def test_interval_missing_calibration_returns_none(sample_salary_input, monkeypatch):
+    """With no conformal calibration, bounds are None but point survives."""
+    monkeypatch.setattr(infer, "conformal", None)
+    data = SalaryInput(**sample_salary_input)
+    result = predict_salary_interval(data, survey_year="2025")
+    assert result["lower"] is None
+    assert result["upper"] is None
+    assert result["coverage"] is None
+    assert result["prediction"] > 0

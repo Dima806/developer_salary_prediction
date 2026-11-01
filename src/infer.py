@@ -1,5 +1,6 @@
 """Inference utilities for salary prediction."""
 
+import math
 import pickle
 from pathlib import Path
 
@@ -21,6 +22,16 @@ with open(model_path, "rb") as f:
     artifacts = pickle.load(f)  # nosec B301 - loading trusted local model artifact
     model = artifacts["model"]
     feature_columns = artifacts["feature_columns"]
+
+# Conformal prediction-interval calibration (per survey year). Prefer the
+# copy saved inside the model artifact; fall back to the standalone YAML so
+# an older model.pkl can still gain intervals after a re-calibration.
+conformal = artifacts.get("conformal")
+if conformal is None:
+    _conformal_path = Path("config/conformal_intervals.yaml")
+    if _conformal_path.exists():
+        with open(_conformal_path, "r") as f:
+            conformal = yaml.safe_load(f)
 
 # Load valid categories for input validation
 valid_categories_path = Path("config/valid_categories.yaml")
@@ -81,6 +92,62 @@ def predict_salaries(data: SalaryInput) -> dict[str, float]:
     """
     return {
         year: predict_salary(data, survey_year=year)
+        for year in valid_categories["SurveyYear"]
+    }
+
+
+def _interval_bounds(prediction: float, survey_year: str) -> dict:
+    """Apply the conformal log-space quantile to a point prediction.
+
+    Returns a dict with prediction plus lower/upper/coverage. When no
+    calibration is available, lower/upper/coverage are None (prediction is
+    still returned).
+    """
+    result = {
+        "prediction": prediction,
+        "lower": None,
+        "upper": None,
+        "coverage": None,
+    }
+    if not conformal:
+        return result
+
+    quantiles = conformal.get("log_residual_quantile", {})
+    q = quantiles.get(survey_year, quantiles.get("_overall"))
+    if q is None:
+        return result
+
+    result["lower"] = round(max(0.0, prediction * math.exp(-q)), 2)
+    result["upper"] = round(prediction * math.exp(q), 2)
+    result["coverage"] = conformal.get("coverage")
+    return result
+
+
+def predict_salary_interval(data: SalaryInput, survey_year: str = "2025") -> dict:
+    """Predict salary with a conformal prediction interval.
+
+    Args:
+        data: SalaryInput model with developer information.
+        survey_year: Survey year to predict for (e.g. "2025", "2026").
+
+    Returns:
+        Dict with keys: prediction (USD point estimate), lower, upper
+        (interval bounds in USD) and coverage (e.g. 0.80). lower/upper/
+        coverage are None if the model has no conformal calibration.
+    """
+    prediction = predict_salary(data, survey_year=survey_year)
+    return _interval_bounds(prediction, survey_year)
+
+
+def predict_salaries_with_intervals(data: SalaryInput) -> dict[str, dict]:
+    """Predict salary and interval for every survey year.
+
+    Returns:
+        Dict mapping survey year to the dict returned by
+        predict_salary_interval.
+    """
+    return {
+        year: predict_salary_interval(data, survey_year=year)
         for year in valid_categories["SurveyYear"]
     }
 

@@ -251,6 +251,116 @@ def save_currency_rates(
     return rates_by_year
 
 
+def conformal_quantile(residuals: np.ndarray, coverage: float) -> float | None:
+    """Finite-sample split-conformal quantile of nonconformity scores.
+
+    Returns the smallest q such that at least ``coverage`` of future scores
+    are <= q, using the standard rank correction ceil((n + 1) * coverage).
+    When that rank exceeds n (not enough calibration points for the level)
+    the largest score is returned; None is returned for an empty input.
+
+    Args:
+        residuals: 1-D array of nonconformity scores.
+        coverage: Target coverage in (0, 1), e.g. 0.80.
+
+    Returns:
+        The conformal quantile, or None if residuals is empty.
+    """
+    residuals = np.sort(np.asarray(residuals, dtype=float))
+    n = residuals.size
+    if n == 0:
+        return None
+    rank = int(np.ceil((n + 1) * coverage))
+    if rank >= n:
+        return float(residuals[-1])
+    return float(residuals[rank - 1])
+
+
+def compute_conformal_intervals(
+    oof_pred: np.ndarray,
+    y_true: np.ndarray,
+    years: np.ndarray,
+    coverage: float,
+) -> dict:
+    """Compute per-year log-space conformal interval quantiles.
+
+    Scores come from out-of-fold predictions (cross-conformal), so every
+    row is scored by a model that never saw it. The nonconformity score is
+    the absolute log ratio ``|log(y) - log(pred)|``; applied as
+    ``[pred * exp(-q), pred * exp(q)]`` it gives a multiplicative interval
+    that is always positive and widens with the predicted salary (salary
+    error is roughly proportional, not additive). A separate quantile per
+    SurveyYear (Mondrian conformal) lets 2025 and 2026 carry different
+    widths; '_overall' is a pooled fallback for a year with no rows.
+
+    Args:
+        oof_pred: Out-of-fold predictions aligned with y_true/years (NaN
+            where a row was never in a test fold).
+        y_true: True salaries, same order as oof_pred.
+        years: SurveyYear per row, same order as oof_pred.
+        coverage: Target central coverage, e.g. 0.80.
+
+    Returns:
+        Dict with coverage, space, method and a log_residual_quantile map
+        {year: q, '_overall': q}.
+    """
+    oof_pred = np.asarray(oof_pred, dtype=float)
+    y_true = np.asarray(y_true, dtype=float)
+    years = np.asarray(years)
+
+    mask = ~np.isnan(oof_pred) & (oof_pred > 0) & (y_true > 0)
+    log_resid = np.abs(np.log(y_true[mask]) - np.log(oof_pred[mask]))
+    masked_years = years[mask]
+
+    quantiles = {"_overall": conformal_quantile(log_resid, coverage)}
+    for year in np.unique(masked_years):
+        quantiles[str(year)] = conformal_quantile(
+            log_resid[masked_years == year], coverage
+        )
+
+    return {
+        "coverage": coverage,
+        "space": "log",
+        "method": "cv_mondrian_year",
+        "log_residual_quantile": quantiles,
+    }
+
+
+def report_conformal_coverage(
+    oof_pred: np.ndarray,
+    y_true: np.ndarray,
+    years: np.ndarray,
+    conformal: dict,
+) -> None:
+    """Print empirical coverage and width of the conformal intervals.
+
+    Checks, on the out-of-fold predictions, how often the true salary falls
+    inside the calibrated interval (should be near the target coverage).
+    """
+    oof_pred = np.asarray(oof_pred, dtype=float)
+    y_true = np.asarray(y_true, dtype=float)
+    years = np.asarray(years)
+    q_map = conformal["log_residual_quantile"]
+    coverage = conformal["coverage"]
+
+    print(f"\nConformal calibration (target coverage {coverage:.0%}, log space):")
+    base = ~np.isnan(oof_pred) & (oof_pred > 0) & (y_true > 0)
+    for year in sorted({str(y) for y in years[base]}):
+        q = q_map.get(year, q_map["_overall"])
+        sel = base & (years == year)
+        pred = oof_pred[sel]
+        truth = y_true[sel]
+        lower = pred * np.exp(-q)
+        upper = pred * np.exp(q)
+        empirical = float(np.mean((truth >= lower) & (truth <= upper)))
+        half_width_pct = (np.exp(q) - 1) * 100
+        print(
+            f"  {year}: q={q:.3f}  empirical coverage={empirical:.1%}  "
+            f"interval=mean x[{np.exp(-q):.2f}, {np.exp(q):.2f}] "
+            f"(+/-{half_width_pct:.0f}%, n={int(sel.sum()):,})"
+        )
+
+
 def main():
     """Train and save the salary prediction model."""
     # Load configuration
@@ -486,6 +596,9 @@ def main():
     train_scores = []
     test_scores = []
     best_iterations = []
+    # Out-of-fold predictions: each row predicted once, by a model that did
+    # not train on it. Used below to calibrate conformal prediction intervals.
+    oof_pred = np.full(len(X), np.nan)
 
     for fold, (train_idx, test_idx) in enumerate(kf.split(X), 1):
         X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
@@ -507,8 +620,10 @@ def main():
             verbose=False,
         )
 
+        test_pred = model.predict(X_test)
+        oof_pred[test_idx] = test_pred
         train_mape = np.mean(np.abs((y_train - model.predict(X_train)) / y_train)) * 100
-        test_mape = np.mean(np.abs((y_test - model.predict(X_test)) / y_test)) * 100
+        test_mape = np.mean(np.abs((y_test - test_pred) / y_test)) * 100
         train_scores.append(train_mape)
         test_scores.append(test_mape)
         best_iterations.append(model.best_iteration + 1)
@@ -523,6 +638,24 @@ def main():
     print(f"\nCV Average Train MAPE: {avg_train:.2f}%")
     print(f"CV Average Test MAPE:  {avg_test:.2f}% (+/- {std_test:.2f}%)")
     print(f"CV Average best iteration: {avg_best_iter}")
+
+    # Calibrate conformal prediction intervals from the out-of-fold
+    # predictions (cross-conformal), one quantile per survey year.
+    coverage = config.get("conformal", {}).get("coverage", 0.80)
+    conformal = compute_conformal_intervals(
+        oof_pred, y.to_numpy(), df["SurveyYear"].to_numpy(), coverage
+    )
+    report_conformal_coverage(
+        oof_pred, y.to_numpy(), df["SurveyYear"].to_numpy(), conformal
+    )
+    conformal_path = Path(
+        config.get("conformal", {}).get(
+            "output_path", "config/conformal_intervals.yaml"
+        )
+    )
+    with open(conformal_path, "w") as f:
+        yaml.dump(conformal, f, default_flow_style=False, sort_keys=False)
+    print(f"Saved conformal interval quantiles to {conformal_path}")
 
     # Train final model on all data for deployment
     # Use a small held-out split for early stopping only
@@ -555,6 +688,7 @@ def main():
     artifacts = {
         "model": final_model,
         "feature_columns": list(X.columns),
+        "conformal": conformal,
     }
 
     with open(model_path, "wb") as f:

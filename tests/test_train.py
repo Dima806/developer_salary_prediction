@@ -8,7 +8,9 @@ import yaml
 from src.train import (
     REQUIRED_COLUMNS,
     apply_cardinality_reduction,
+    compute_conformal_intervals,
     compute_currency_rates,
+    conformal_quantile,
     drop_other_rows,
     extract_valid_categories,
     filter_salaries,
@@ -493,3 +495,65 @@ class TestSaveCurrencyRates:
         assert result["2026"]["Germany"]["rate"] == 0.9
         on_disk = yaml.safe_load(paths["2026"].read_text())
         assert on_disk["Germany"]["rate"] == 0.9
+
+
+class TestConformalQuantile:
+    """Tests for conformal_quantile()."""
+
+    def test_empty_returns_none(self):
+        """Empty residuals return None."""
+        assert conformal_quantile(np.array([]), 0.8) is None
+
+    def test_rank_uses_finite_sample_correction(self):
+        """Uses the ceil((n+1)*coverage) order statistic."""
+        residuals = np.arange(1, 101, dtype=float)  # 1..100, sorted
+        # rank = ceil(101 * 0.8) = 81 -> the 81st smallest value = 81
+        assert conformal_quantile(residuals, 0.8) == 81.0
+
+    def test_returns_max_when_rank_exceeds_n(self):
+        """When coverage is too high for n points, returns the max."""
+        residuals = np.array([1.0, 2.0, 3.0])
+        assert conformal_quantile(residuals, 0.99) == 3.0
+
+    def test_unsorted_input(self):
+        """Input need not be sorted."""
+        residuals = np.array([5.0, 1.0, 3.0, 2.0, 4.0])
+        # rank = ceil(6 * 0.5) = 3 -> 3rd smallest = 3.0
+        assert conformal_quantile(residuals, 0.5) == 3.0
+
+
+class TestComputeConformalIntervals:
+    """Tests for compute_conformal_intervals()."""
+
+    def test_structure_and_keys(self):
+        """Returns coverage, space, method and per-year quantiles."""
+        rng = np.random.default_rng(0)
+        y = rng.uniform(30000, 200000, size=200)
+        pred = y * rng.uniform(0.7, 1.4, size=200)
+        years = np.array(["2025"] * 100 + ["2026"] * 100)
+        result = compute_conformal_intervals(pred, y, years, 0.8)
+        assert result["coverage"] == 0.8
+        assert result["space"] == "log"
+        assert set(result["log_residual_quantile"]) == {"_overall", "2025", "2026"}
+        assert all(q >= 0 for q in result["log_residual_quantile"].values())
+
+    def test_ignores_nan_and_nonpositive(self):
+        """NaN out-of-fold preds and non-positive values are excluded."""
+        pred = np.array([np.nan, 100000.0, 0.0, 120000.0])
+        y = np.array([90000.0, 100000.0, 50000.0, 120000.0])
+        years = np.array(["2025", "2025", "2025", "2025"])
+        result = compute_conformal_intervals(pred, y, years, 0.8)
+        # Only the two valid rows (both zero log-residual) survive
+        assert result["log_residual_quantile"]["2025"] == 0.0
+
+    def test_wider_residuals_give_larger_quantile(self):
+        """A year with larger errors gets a wider interval quantile."""
+        y = np.full(100, 100000.0)
+        tight = y * 1.05
+        wide = y * 1.8
+        pred = np.concatenate([tight, wide])
+        y2 = np.concatenate([y, y])
+        years = np.array(["2025"] * 100 + ["2026"] * 100)
+        result = compute_conformal_intervals(pred, y2, years, 0.8)
+        q = result["log_residual_quantile"]
+        assert q["2026"] > q["2025"]

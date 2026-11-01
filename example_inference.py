@@ -1,7 +1,11 @@
 """Example script showing how to use the salary prediction model programmatically."""
 
 from src.schema import SalaryInput
-from src.infer import predict_salaries, predict_salary
+from src.infer import (
+    predict_salaries,
+    predict_salary,
+    predict_salaries_with_intervals,
+)
 
 
 def main():
@@ -140,6 +144,24 @@ def main():
         print(f"💰 {year}: ${salary:,.2f} USD/year")
     change = (salaries["2026"] / salaries["2025"] - 1) * 100
     print(f"📈 2026 vs 2025: {change:+.1f}%")
+
+    # Example 6: Prediction intervals (uncertainty range) per year
+    print("\n📊 Example 6: 80% Prediction Intervals (same input as Example 1)")
+    print("-" * 60)
+
+    intervals = predict_salaries_with_intervals(input_data_1)
+    for year, info in intervals.items():
+        if info["lower"] is not None:
+            cov = f"{info['coverage']:.0%}"
+            print(
+                f"💰 {year}: ${info['prediction']:,.0f} "
+                f"({cov} range: ${info['lower']:,.0f} - ${info['upper']:,.0f})"
+            )
+        else:
+            print(
+                f"💰 {year}: ${info['prediction']:,.0f} "
+                "(no interval - model not conformal-calibrated)"
+            )
 
     print("\n" + "=" * 60)
     print("✅ All predictions completed successfully!")

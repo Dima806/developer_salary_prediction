@@ -19,6 +19,8 @@ A minimal, local-first ML application that predicts developer salaries using Sta
 ## Features
 
 - 🎯 XGBoost (gradient boosting) model for salary prediction
+- 📈 **Uncertainty ranges** — every prediction comes with an 80% conformal
+  prediction interval (not just a single point), shown for 2025 and 2026
 - ✅ Input validation with Pydantic (schema) and runtime guardrails (valid categories)
 - 🌐 Interactive web UI with Streamlit
 - 📊 Trained on Stack Overflow 2025 + 2026 Developer Survey data
@@ -67,9 +69,14 @@ This will:
 - Load both survey years and add `SurveyYear` (`"2025"` / `"2026"`) as a feature
 - Filter salaries (per year and country) and reduce cardinality of categorical features
 - Run 5-fold cross-validation and report mean MAPE per fold
+- Calibrate conformal prediction intervals from the out-of-fold predictions,
+  one quantile per survey year (see "Prediction intervals" below)
 - Train a final XGBoost model on the full dataset with early stopping
-- Save the model artifact to `models/model.pkl`
+- Save the model artifact to `models/model.pkl` (model + feature columns +
+  conformal calibration)
 - Generate `config/valid_categories.yaml` — valid input values for runtime guardrails
+- Generate `config/conformal_intervals.yaml` — a human-readable copy of the
+  interval calibration
 - Generate `config/currency_rates.yaml` (2025) and `config/currency_rates_2026.yaml`
   (2026) — per-country median currency conversion rates, computed from each year's
   survey answers
@@ -162,11 +169,20 @@ side by side, in USD plus a local currency equivalent where available (each year
 uses its own survey-derived exchange rate). The 2026 values show the change vs 2025,
 e.g. `+1.3% vs 2025`, for both USD and local currency.
 
+Each estimate is shown with an **80% range** (e.g. `80% range: $95,000 – $265,000`)
+and a chart with the point estimate and interval bar per year, so the uncertainty
+is visible alongside the central number.
+
 ### Programmatic Usage
 
 ```python
 from src.schema import SalaryInput
-from src.infer import predict_salaries, predict_salary
+from src.infer import (
+    predict_salaries,
+    predict_salary,
+    predict_salary_interval,
+    predict_salaries_with_intervals,
+)
 
 input_data = SalaryInput(
     country="United States of America",
@@ -181,11 +197,21 @@ input_data = SalaryInput(
     employment="Employed",
 )
 
-salary = predict_salary(input_data)  # 2025 (default)
+salary = predict_salary(input_data)  # 2025 point estimate (default)
 print(f"Estimated salary: ${salary:,.0f}")
 
 salaries = predict_salaries(input_data)  # {"2025": ..., "2026": ...}
 print(f"2026: ${salaries['2026']:,.0f}")
+
+# Point estimate + 80% prediction interval
+interval = predict_salary_interval(input_data, survey_year="2026")
+# {"prediction": ..., "lower": ..., "upper": ..., "coverage": 0.80}
+print(f"2026: ${interval['prediction']:,.0f} "
+      f"(80% range ${interval['lower']:,.0f} - ${interval['upper']:,.0f})")
+
+# Both years with intervals at once
+both = predict_salaries_with_intervals(input_data)
+# {"2025": {prediction, lower, upper, coverage}, "2026": {...}}
 ```
 
 **Run the example script:**
@@ -193,6 +219,37 @@ print(f"2026: ${salaries['2026']:,.0f}")
 ```bash
 uv run python example_inference.py
 ```
+
+## Prediction Intervals (Uncertainty Ranges)
+
+The model reports an **80% conformal prediction interval** around each point
+estimate, so a result is a *range* ("most developers like this earn between
+$95k and $265k") rather than a single, falsely precise number.
+
+How it is built (see [`src/train.py`](src/train.py)):
+
+1. During 5-fold cross-validation, every row gets an **out-of-fold** prediction
+   from a model that did not train on it (cross-conformal).
+2. The nonconformity score is the **absolute log ratio**
+   `|log(actual) - log(predicted)|`. Working in log space makes the interval
+   *multiplicative* — `[pred * exp(-q), pred * exp(q)]` — so it is always
+   positive and widens with the salary, matching how salary error scales.
+3. The conformal quantile `q` is taken **separately per survey year**
+   (Mondrian conformal), so 2025 and 2026 can carry different widths.
+4. `q` is stored in `models/model.pkl` and mirrored to
+   `config/conformal_intervals.yaml`.
+
+Set the coverage level in `config/model_parameters.yaml`:
+
+```yaml
+conformal:
+  coverage: 0.80   # 0.90 for a wider, more conservative 90% interval
+```
+
+This follows the conformal-prediction approach that comes out ahead in the
+[prediction intervals arena](https://github.com/Dima806/prediction_intervals_arena):
+it wraps the existing model, needs no distributional assumptions, and gives a
+coverage guarantee under exchangeability.
 
 ## Input Validation and Guardrails
 
@@ -288,6 +345,7 @@ settings, and guardrail thresholds. You can customise:
 - **Data Processing**: Salary thresholds, percentile bounds, train/test split ratio
 - **Feature Engineering**: Cardinality reduction settings (max categories, min frequency)
 - **Model Hyperparameters**: Learning rate, tree depth, early stopping, etc.
+- **Conformal**: Prediction-interval coverage and output path
 - **Training Settings**: Verbosity, model save path
 - **Guardrails**: MAPE thresholds for model evaluation
 
@@ -304,6 +362,10 @@ features:
   cardinality:
     max_categories: 30         # Default: 30
     min_frequency: 50          # Default: 50
+
+# Widen the prediction interval to 90%
+conformal:
+  coverage: 0.90               # Default: 0.80
 ```
 
 ### `config/optuna_config.yaml`
@@ -323,6 +385,7 @@ scale), number of trials, CV folds, and fixed parameters that are not tuned
 │   ├── model_parameters.yaml        # Model configuration and guardrails
 │   ├── optuna_config.yaml           # Optuna hyperparameter search space
 │   ├── valid_categories.yaml        # Valid input categories (generated by training)
+│   ├── conformal_intervals.yaml     # Prediction-interval calibration (generated by training)
 │   ├── currency_rates.yaml          # 2025 per-country currency rates (generated by training)
 │   ├── currency_rates_2026.yaml     # 2026 per-country currency rates (generated by training)
 │   └── category_mapping_2026.yaml   # 2026 → 2025 answer wording map
@@ -364,6 +427,7 @@ scale), number of trials, CV folds, and fixed parameters that are not tuned
 - **optuna** — Hyperparameter optimisation
 - **pydantic** — Input schema validation
 - **streamlit** — Web UI
+- **altair** — Prediction-interval chart (bundled with Streamlit)
 - **ruff** — Linting and formatting
 - **radon** — Complexity and maintainability metrics
 - **bandit** — Static security analysis

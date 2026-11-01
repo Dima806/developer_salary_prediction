@@ -1,9 +1,18 @@
 """Streamlit web app for salary prediction."""
 
+import altair as alt
+import pandas as pd
 import streamlit as st
 
-from src.infer import predict_salaries, get_local_currency, valid_categories
+from src.infer import (
+    predict_salaries_with_intervals,
+    get_local_currency,
+    valid_categories,
+)
 from src.schema import SalaryInput
+
+# Single hue for the salary marks (one series, so no legend is needed).
+INTERVAL_COLOR = "#4C78A8"
 
 
 def pct_delta(new: float, old: float, base_year: str) -> str | None:
@@ -45,6 +54,9 @@ with st.sidebar:
         - Organization size
         - Employment status
         - Survey year (2025, 2026), both predicted automatically
+
+        Each prediction comes with an 80% range (a conformal prediction
+        interval) so you can see the uncertainty, not just a single number.
         """
     )
     st.info("💡 Tip: Results are estimates based on survey averages.")
@@ -206,20 +218,31 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
             employment=employment,
         )
 
-        # Make prediction for every survey year
+        # Make a prediction (with interval) for every survey year
         with st.spinner("Calculating prediction..."):
-            salaries = predict_salaries(input_data)
+            results = predict_salaries_with_intervals(input_data)
 
         # Display result
         st.success("Prediction Complete!")
+
+        salaries = {year: r["prediction"] for year, r in results.items()}
+
+        # Central coverage of the conformal interval (e.g. 0.80), if present
+        coverage = next(
+            (r["coverage"] for r in results.values() if r["coverage"]), None
+        )
+        cov_pct = f"{coverage:.0%}" if coverage else None
 
         # One column per survey year: USD and local currency (each year uses
         # its own survey-derived rate); later years show % change vs the first
         base_year = min(salaries)
         base_usd = salaries[base_year]
         base_local = get_local_currency(country, base_usd, survey_year=base_year)
-        year_columns = st.columns(len(salaries))
-        for year_column, (year, salary) in zip(year_columns, salaries.items()):
+        year_columns = st.columns(len(results))
+        for year_column, (year, result) in zip(year_columns, results.items()):
+            salary = result["prediction"]
+            lower, upper = result["lower"], result["upper"]
+            has_interval = lower is not None and upper is not None
             is_base = year == base_year
             local = get_local_currency(country, salary, survey_year=year)
             with year_column:
@@ -230,33 +253,37 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
                     delta=None if is_base else pct_delta(salary, base_usd, base_year),
                     help=f"Predicted annual compensation in USD ({year} survey)",
                 )
+                if has_interval:
+                    st.caption(f"{cov_pct} range: ${lower:,.0f} – ${upper:,.0f}")
                 if local and local["code"] != "USD":
+                    code = local["code"]
                     # No % when the currency itself changed (e.g. BGN -> EUR)
                     local_delta = None
-                    if (
-                        not is_base
-                        and base_local
-                        and base_local["code"] == local["code"]
-                    ):
+                    if not is_base and base_local and base_local["code"] == code:
                         local_delta = pct_delta(
                             local["salary_local"],
                             base_local["salary_local"],
                             base_year,
                         )
                     st.metric(
-                        label=f"Estimated Annual Salary ({local['code']})",
-                        value=f"{local['salary_local']:,.0f} {local['code']}",
+                        label=f"Estimated Annual Salary ({code})",
+                        value=f"{local['salary_local']:,.0f} {code}",
                         delta=local_delta,
-                        help=f"Converted using survey-derived rate: 1 USD = {local['rate']} {local['code']} ({local['name']}, {local['rate_year']} survey)",
+                        help=f"Converted using survey-derived rate: 1 USD = {local['rate']} {code} ({local['name']}, {local['rate_year']} survey)",
                     )
-                    if (
-                        not is_base
-                        and base_local
-                        and base_local["code"] != local["code"]
-                    ):
+                    if has_interval:
+                        local_lo = get_local_currency(country, lower, survey_year=year)
+                        local_hi = get_local_currency(country, upper, survey_year=year)
+                        if local_lo and local_hi:
+                            st.caption(
+                                f"{cov_pct} range: "
+                                f"{local_lo['salary_local']:,.0f} – "
+                                f"{local_hi['salary_local']:,.0f} {code}"
+                            )
+                    if not is_base and base_local and base_local["code"] != code:
                         st.caption(
                             f"Local currency changed from {base_local['code']} "
-                            f"to {local['code']}; no % change shown."
+                            f"to {code}; no % change shown."
                         )
                     if local["rate_year"] != year:
                         st.caption(
@@ -264,10 +291,54 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
                             f"using the {local['rate_year']} survey rate."
                         )
 
+        # Visual: central estimate (point) with the prediction interval (bar),
+        # one row per survey year. One series, so no legend; the title says it.
+        interval_rows = [
+            {
+                "year": y,
+                "mean": r["prediction"],
+                "lower": r["lower"],
+                "upper": r["upper"],
+            }
+            for y, r in results.items()
+            if r["lower"] is not None and r["upper"] is not None
+        ]
+        if interval_rows:
+            chart_df = pd.DataFrame(interval_rows)
+            base = alt.Chart(chart_df).encode(
+                y=alt.Y("year:N", title=None, sort=sorted(salaries))
+            )
+            band = base.mark_rule(size=3, color=INTERVAL_COLOR, opacity=0.55).encode(
+                x=alt.X(
+                    "lower:Q",
+                    title=f"Annual salary (USD) — point + {cov_pct} interval",
+                    axis=alt.Axis(format="$,.0f"),
+                    scale=alt.Scale(zero=False, nice=True),
+                ),
+                x2="upper:Q",
+            )
+            dot = base.mark_point(size=140, filled=True, color=INTERVAL_COLOR).encode(
+                x="mean:Q"
+            )
+            label = base.mark_text(
+                dy=-13, color=INTERVAL_COLOR, fontWeight="bold"
+            ).encode(x="mean:Q", text=alt.Text("mean:Q", format="$,.0f"))
+            st.altair_chart(band + dot + label, use_container_width=True)
+
+        if cov_pct:
+            interval_note = (
+                f"The bar is a {cov_pct} prediction interval (conformal, "
+                "calibrated per survey year on held-out responses): about "
+                f"{cov_pct} of developers matching these inputs earn within it. "
+                "The point is the model's central estimate. "
+            )
+        else:
+            interval_note = ""
         st.caption(
-            "The year-over-year change is the difference between two "
-            "survey-based estimates, not a guaranteed raise. The local-currency "
-            "change also includes exchange-rate movements between the surveys."
+            interval_note + "The year-over-year change is the difference between "
+            "two survey-based estimates, not a guaranteed raise. The "
+            "local-currency change also includes exchange-rate movements "
+            "between the surveys."
         )
 
     except FileNotFoundError:
@@ -285,5 +356,6 @@ if st.button("🔮 Predict Salary", type="primary", use_container_width=True):
 # Footer
 st.divider()
 st.caption(
-    "Built with Streamlit • Data from Stack Overflow Developer Survey • Model: XGBoost"
+    "Built with Streamlit • Data from Stack Overflow Developer Survey • "
+    "Model: XGBoost + conformal prediction intervals"
 )

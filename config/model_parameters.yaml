@@ -46,6 +46,11 @@ model:
   reg_alpha: 0.10279490840973991
   reg_lambda: 1.9799853115073398
   gamma: 2.809228604965898
+conformal:
+  # Target central coverage of the prediction interval (e.g. 0.80 -> an
+  # 80% interval, calibrated per survey year from out-of-fold residuals).
+  coverage: 0.80
+  output_path: config/conformal_intervals.yaml
 training:
   verbose: false
   save_model: true
